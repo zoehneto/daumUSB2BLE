@@ -1,4 +1,4 @@
-# Kettler Bridge
+# ergoFACE
 
 ## setup
 Install on a rasperypi zero or anything else with nodejs (lts version) installed.
@@ -10,7 +10,7 @@ Install on a rasperypi zero or anything else with nodejs (lts version) installed
 npm install
 ```
 
-it can tke a while as bleno must be compiled from sources.
+it can take a while as bleno must be compiled from sources.
 
 ## launch
 
@@ -18,16 +18,21 @@ it can tke a while as bleno must be compiled from sources.
 node server.js
 ```
 
-Your kettler bike will appear as KettlerBLE device with two services (power & FTMS)
+Your Daum bike will appear as DAUM Ergobike 8008 TRS device with two services (power & FTMS)
 
-## website
-*  modify the index.ejs file with the ip of your raspbery
+## website / server
 * start your browser pi-adress:3000
 you can follow the bridge activity on a simple website.
-It will display the current power, HR et speed and some logs
+It will display the current power, rpm, speed
+the current gear and program your Daum is running and the socket messages.
+This site is used to toggle between ERG and SIM mode and switching gears or just power
 
 
-## future
+## current features
+* advanced webserver with dashboard and log messages
 * Zwift can connect and read the data.
-* Zwift (ipad) recongnize the FTMS service 
-* ~~]ERG mode is not yet implemented (FTMS control point)~~
+* Zwift recognize the FTMS service
+* ERG mode is fully implemented (FTMS control point)
+* SIM mode is fully implemented (FTMS control point & physics simulation)
+* use virtual gearbox of Daum bike to ride in SIM mode
+* use gpios (see gpio.js) to add hardware switches for more realistic ride and shifting experience
