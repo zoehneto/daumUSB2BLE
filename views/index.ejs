@@ -1,91 +1,337 @@
-<!DOCTYPE html>
-<html>
-   <head>
-      <meta charset="utf-8">
-      <title>Test</title>
-	  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js"></script>
-      <script src="http://code.jquery.com/jquery-3.1.1.min.js"></script>
-      <style>
-         #messageArea{
-            border: 1px solid black;
-			height: 300px;
-			margin-bottom: 8px;
-			overflow: scroll;
-			padding: 5px;
-         }
-		 .content {
-			padding: 30px 15px;
-			min-height: calc(100% - 123px);
-		}
-      </style>
-      <script type="text/javascript">
-         var socket = io.connect("192.168.1.36:3000");
-         socket.on('speed', function (data) {  
-			$('#speed').html(data);
-         });
-		 socket.on('hr', function (data) {  
-			$('#heartrate').html(data);
-         });
-		 socket.on('power', function (data) {  
-			$('#power').html(data);
-         });
-         socket.on('raw', function (data) {  
-         	$('#messageArea').append("<p>" + data + "</p>");
-         });
-         socket.on('error', function (data) {  
-         	$('#messageArea').append("<li>" + data + "</li>");
-         });
-         socket.on('key', function (data) {  
-         	$('#messageArea').append("<p>" + data + "</p>");
-         });
-		 
-		 $(function () {
-			var socket = io();
-			 $('form').submit(function(){
-				socket.emit('restart', 'Salut serveur, ça va ?');
-				return false;
-			 });
-		 });
-      </script>
-   </head>
-   <body>
-	   <div class="wrapper">
-			<div class="content">
-				<div class="container-fluid">
-					<div class="row">
-						<div class="col-md-4">                       
-							<h4 class="title">Power</h4>
-							<p class="power" id="power">150</p>    
-						</div>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="./public/css/bootstrap.min.css" rel="stylesheet">
+    <link href="./public/css/bootstrap-toggle.min.css" rel="stylesheet">
 
-						<div class="col-md-4">
-						   <h4 class="title">HR</h4>
-							<p class="heartrate" id="heartrate">80</p>  
-						</div>
-						
-						<div class="col-md-4">
-						   <h4 class="title">Speed</h4>
-							<p class="speed" id="speed">35</p>  
-						</div>
-					</div>
-					
-					<div class="row">
-						<div class="col-md-12">  
-							<div class="row" id="messageArea">			
-							</div>
-						</div>
-					</div>
-					
-					<div class="row">
-						<div class="col-md-12">  
-							<form action="">
-							  <input id="m" autocomplete="off" /><button>Restart</button>
-							</form>
-						</div>
-					</div>
-				</div>
-			 </div>
-		</div>
-   </body>
+    <link rel="apple-touch-icon" sizes="180x180" href="./public/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="./public/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="./public/favicon-16x16.png">
+    <link rel="manifest" href="./public/site.webmanifest">
+
+    <script src="./lib/socket.io.js"></script>
+    <script src="./lib/jquery-3.3.1.slim.min.js"></script>
+    <script src="./lib/popper.min.js"></script>
+    <script src="./lib/bootstrap.min.js"></script>
+    <script src="./lib/bootstrap-toggle.min.js"></script>
+
+    <title>ergoFACE Server</title>
+
+    <style>
+      .progress {
+        margin-bottom: 20px;
+        width: 100%;
+        font-size: 1.5em;
+        font-weight: bold;
+        height: 60px;
+      }
+      .alert {
+        margin-bottom: 1px;
+        /* height: 30px;
+        line-height:30px; */
+        padding:2px 2px;
+        max-width: 100%;
+        font-size: 0.75em;
+      }
+      .jumbotron {
+        padding: 1rem 1rem;
+      }
+      .progress-bar {
+        color: #21252B;
+      }
+      .scroll {
+        max-height: 420px;
+        overflow-y: auto;
+      }
+    </style>
+    <script type="text/javascript">
+      var socket = io(); // changed in server.js to get the IP and dont put it in static
+      ///////////////////////////////////////////////////////////////////////////
+      // alert messages
+      ///////////////////////////////////////////////////////////////////////////
+      function addAlert_raw(message) {
+        if ($('#messages_raw').is(':checked'))
+          {
+            $('#alerts').prepend('<div class="alert alert-secondary text-left small">[Raw] ' + new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '') + ': <b>' + message + '</b></div>');
+          }
+      };
+      socket.on('raw', function (data) {
+        addAlert_raw(data);
+        $('#receiveDataRS232').text("1");
+        setTimeout(function() {
+          $('#receiveDataRS232').text(function(){
+            return "0"
+          });
+        }, 500);
+      });
+      function addAlert_error(message) {
+        if ($('#messages_error').is(':checked'))
+          {
+            $('#alerts').prepend('<div class="alert alert-danger text-left small">[Err] ' + new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '') + ': <b>' + message + '</b></div>');
+          }
+      };
+      socket.on('error', function (data) {
+        addAlert_error(data);
+      });
+      function addAlert_key(message) {
+        if ($('#messages_key').is(':checked'))
+          {
+            $('#alerts').prepend('<div class="alert alert-primary text-left small">[Key] ' + new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '') + ': <b>' + message + '</b></div>');
+          }
+      };
+      socket.on('key', function (data) {
+        // place here an if for a toggle element, to switch on or off messages
+        // https://stackoverflow.com/questions/5539139/change-get-check-state-of-checkbox
+        addAlert_key(data);
+      });
+      ///////////////////////////////////////////////////////////////////////////
+      // ergometer values
+      ///////////////////////////////////////////////////////////////////////////
+      socket.on('speed', function (data) {
+        $('#speed').html(data);
+        $('#speed_bar').css("width", data * 1.5+ "%");
+        $('#speed_bar').attr("aria-valuenow", data);
+        var progressBar = $('#speed_bar')
+        progressBar.width(data * 1.5 + "%")
+        $('#speed_bar').text(data + " km/h");
+      });
+      socket.on('rpm', function (data) {
+        $('#rpm').html(data);
+        $('#rpm_bar').css("width", data * 0.833 + "%");
+        $('#rpm_bar').attr("aria-valuenow", data);
+        var progressBar = $('#rpm_bar')
+        progressBar.width(data * 0.833 + "%")
+        $('#rpm_bar').text(data + " / min");
+      });
+      socket.on('power', function (data) {
+        $('#power').html(data);
+        $('#power_bar').css("width", data * 0.125 + "%");
+        $('#power_bar').attr("aria-valuenow", data);
+        var progressBar = $('#power_bar')
+        progressBar.width(data * 0.125 + "%")
+        $('#power_bar').text(data + " Watt");
+      });
+      socket.on('simpower', function (data) {
+        $('#simpower').text(data);
+        // $('#simpower_bar').css("width", data/8 + "%");
+        // $('#simpower_bar').attr("aria-valuenow", data);
+        // var progressBar = $('#speed_bar')
+        // progressBar.width(data/8 + "%")
+        // $('#simpower_bar').text(data + " W");
+      });
+      socket.on('windspeed', function (data) {
+        $('#windspeed').text(data);
+      });
+      socket.on('crr', function (data) {
+        $('#crr').text(data);
+      });
+      socket.on('cw', function (data) {
+        $('#cw').text(data);
+      });
+      socket.on('grade', function (data) {
+        $('#grade').text(data);
+      });
+      socket.on('gear', function (data) {
+        $('#gear').text("Gear: " + data);
+      });
+      socket.on('program', function (data) {
+        $('#program').text("Program: " + data);
+      });
+      socket.on('control', function (data) {
+        $('#control').text(data);
+      });
+      socket.on('version', function (data) {
+        $('#version').text(data);
+      });
+      ///////////////////////////////////////////////////////////////////////////
+      // Functions and interaction
+      ///////////////////////////////////////////////////////////////////////////
+      $(function () {
+        var socket = io();
+        $('#restart').click(function(){
+          socket.emit('restart', 'Salut serveur, ça va ?');
+          return false;
+        });
+        $('#stop').click(function(){
+          socket.emit('stop', 'stop');
+          return false;
+        });
+        $('#mode').change(function(){
+          if( $(this).is(':checked') ) {
+            socket.emit('mode', 'ERG');
+            // $("#switch").bootstrapToggle('on'); // for connecting switch and mode to change at the same time - this is not working properly, too many messages >100 are sent
+          } else {
+              socket.emit('mode', 'SIM');
+              // $("#switch").bootstrapToggle('off'); // for connecting switch and mode to change at the same time - this is not working properly, too many messages >100 are sent
+            }
+          return false;
+        });
+        $('#switch').change(function(){
+          if( $(this).is(':checked') ) {
+            socket.emit('switch', 'Power');
+            // $("#mode").bootstrapToggle('on'); // for connecting switch and mode to change at the same time - this is not working properly, too many messages >100 are sent
+          } else {
+              socket.emit('switch', 'Gear');
+              // $("#mode").bootstrapToggle('off'); // for connecting switch and mode to change at the same time - this is not working properly, too many messages >100 are sent
+            }
+          return false;
+        });
+        $('#start').click(function(){
+          socket.emit('start', 'start');
+          return false;
+        });
+        $('a.dropdown-item.prog').click(function() {
+          var id = $(this).attr('id');
+          var idd = id.replace('program_', '');
+          socket.emit('setProgram', idd);
+          return false;
+        });
+        $('a.dropdown-item.gear').click(function() {
+          var id = $(this).attr('id');
+          var idd = id.replace('gear_', '');
+          socket.emit('setGear', idd);
+          return false;
+        });
+      });
+    </script>
+  </head>
+<body>
+  <div class="wrapper">
+    <div class="content">
+      <div class="container-fluid">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
+          <!-- <img src="./public/favicon-32x32.png" class="rounded float-left" alt="ergoFACE"> -->
+          <a class="navbar-brand font-small" href="#">ergoFACE</a>
+          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarNavDropdown">
+            <ul class="navbar-nav">
+              <li class="nav-item dropdown active">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  set Gear
+                </a>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuGear">
+                  <a class="dropdown-item gear" id="gear_01" href="#">01</a>
+                  <a class="dropdown-item gear" id="gear_05" href="#">05</a>
+                  <a class="dropdown-item gear" id="gear_0a" href="#">10</a>
+                  <a class="dropdown-item gear" id="gear_0f" href="#">15</a>
+                  <a class="dropdown-item gear" id="gear_14" href="#">20</a>
+                  <a class="dropdown-item gear" id="gear_19" href="#">25</a>
+                </div>
+              </li>
+              <li class="nav-item dropdown active">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  set Program
+                </a>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuProgram">
+                  <a class="dropdown-item prog" id="program_00" href="#">00 - Manual Wattage Mode</a>
+                  <a class="dropdown-item prog" id="program_01" href="#">01 - Ramp up Program</a>
+                  <a class="dropdown-item prog" id="program_31" href="#">49 - Incline Mode</a>
+                </div>
+              </li>
+              <li class="nav-item active">
+                <a class="nav-link" href="#" id="restart"><strong>RESTART</strong></a>
+              </li>
+              <li class="nav-item active">
+                <a class="nav-link" href="#" id="stop"><strong>STOP</strong></a>
+              </li>
+            </ul>
+          </div>
+        </nav>
+        <div class="row">
+          <div class="col-md-4">
+            <div class="card text-center">
+              <div class="card-header">
+                <input type="checkbox" id="switch" class="custom-control-input" unchecked data-toggle="toggle" href="#" data-on="set Power" data-off="switch Gears" data-onstyle="primary" data-offstyle="secondary">
+              </div>
+              <div class="card-body">
+                <h5 class="title">Power</h5>
+                <!-- <p class="power" id="power">0</p> -->
+                <div class="progress">
+                  <div id="power_bar" class="progress-bar bg-success" role="progressbar" style="width: 10%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="800"></div>
+                </div>
+
+                <h5 class="title">RPM</h5>
+                <!-- <p class="rpm" id="rpm">0</p> -->
+                <div class="progress">
+                  <div id="rpm_bar" class="progress-bar bg-info" role="progressbar" style="width: 10%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="120"></div>
+                </div>
+
+                <h5 class="title">Speed</h5>
+                <!-- <p class="speed" id="speed">0</p> -->
+                <div class="progress">
+                  <div id="speed_bar" class="progress-bar bg-warning" role="progressbar" style="width: 10%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+              </div>
+              <div class="card-footer text-muted">
+                <h1><span id="program" class="badge badge-primary">Program: -</span>
+                <span id="gear" class="badge badge-secondary">Gear: -</span></h1>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card text-center">
+              <div class="card-header">
+                <input type="checkbox" id="mode" unchecked data-toggle="toggle" data-on="ERG Mode" data-off="SIM Mode" data-onstyle="primary" data-offstyle="secondary">
+              </div>
+              <div class="card-body">
+                <ul class="list-group">
+                  <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <h5 class="title">Power calculation [W]</h5>
+                    <span id="simpower" class="badge badge-primary float-right m-2">0</span>
+                    <!-- <div class="progress" style="height: 10px;">
+                      <div id="simpower_bar" class="progress-bar bg-success" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="800"></div>
+                    </div> -->
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <h5 class="title">Grade [%]</h5>
+                    <span id="grade" class="badge badge-primary float-right m-2">0</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <h5 class="title">Cw [kg/m]</h5>
+                    <span id="cw" class="badge badge-primary float-right m-2">0</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center small">
+                    <del>Windspeed [m/s]</del>
+                    <span id="windspeed" class="badge badge-secondary float-right m-2">0</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center small">
+                    <del>Crr []</del>
+                    <span id="crr" class="badge badge-secondary float-right m-2">0</span>
+                  </li>
+                </ul>
+              </div>
+              <div class="card-footer text-muted">
+                BLE: <span id="control" class="badge badge-secondary">-</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card card-block d-flex text-center" style="height: 100%">
+              <div class="card-header">
+                <input type="checkbox" id="messages_key" checked data-toggle="toggle" data-on="Key On" data-off="Key Off" data-onstyle="primary" data-offstyle="secondary">
+                <input type="checkbox" id="messages_raw" unchecked data-toggle="toggle" data-on="Raw On" data-off="Raw Off" data-onstyle="primary" data-offstyle="secondary">
+                <input type="checkbox" id="messages_error" checked data-toggle="toggle" data-on="Err On" data-off="Err Off" data-onstyle="primary" data-offstyle="secondary">
+              </div>
+              <div class="card-body scroll d-flex">
+                  <div class="alert" id="alerts"></div>
+              </div>
+              <div class="card-footer text-muted">
+                RS232<span id="receiveDataRS232" class="badge badge-secondary"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="page-footer font-small primary">
+          <div class="footer-copyright text-center py-3">ergoFACE version:
+            <span id="version" class="badge badge-secondary">-</span>
+          </div>
+        </footer>
+      </div>
+    </div>
+  </div>
+</body>
 </html>

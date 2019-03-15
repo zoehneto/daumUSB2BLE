@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+    <title>ergoFACE Server Messages</title>
+
+    <style>
+      #messageArea{
+        border: 1px solid black;
+        height: 300px;
+        margin-bottom: 8px;
+        overflow: scroll;
+        padding: 5px;
+        }
+
+      .content {
+        padding: 30px 15px;
+        min-height: calc(100% - 123px);
+        }
+
+        .progress {
+          margin: 10px;
+          width: 100%;
+        }
+
+    </style>
+    <script type="text/javascript">
+      var socket = io.connect("192.168.0.111:3000");
+
+
+      function addAlert(message) {
+          $('#alerts').append(
+              '<div class="alert">' +
+                  '<button type="button" class="close" data-dismiss="alert">' +
+                  '&times;</button>' + message + '</div>');
+      }
+
+
+      socket.on('speed', function (data) {
+        $('#speed').html(data);
+        $('#speed_bar').css("width", data + "%");
+        $('#speed_bar').attr("aria-valuenow", data);
+        var progressBar = $('#speed_bar')
+        progressBar.width(data + "%")
+        $('#speed_bar').text(data + " km/h");
+      });
+      socket.on('rpm', function (data) {
+        $('#rpm').html(data);
+        $('#rpm_bar').css("width", data + "%");
+        $('#rpm_bar').attr("aria-valuenow", data);
+        var progressBar = $('#rpm_bar')
+        progressBar.width(data + "%")
+        $('#rpm_bar').text(data + " RRM");
+      });
+
+      socket.on('power', function (data) {
+        $('#power').html(data);
+        $('#power_bar').css("width", data/8 + "%");
+        $('#power_bar').attr("aria-valuenow", data);
+        var progressBar = $('#power_bar')
+        progressBar.width(data/8 + "%")
+        $('#power_bar').text(data + " Watt");
+      });
+
+
+      socket.on('raw', function (data) {
+        addAlert(data);
+      });
+
+      socket.on('raw', function (data) {
+        $('#messageArea').append("<p>" + data + "</p>");
+      });
+      socket.on('error', function (data) {
+        $('#messageArea').append("<li>" + data + "</li>");
+      });
+      socket.on('key', function (data) {
+        $('#messageArea').append("<p>" + data + "</p>");
+      });
+
+      $(function () {
+        var socket = io();
+        $('form').submit(function(){
+          socket.emit('restart', 'Salut serveur, ça va ?');
+          return false;
+        });
+      });
+    </script>
+  </head>
+
+<body>
+
+
+
+
+  <div class="wrapper">
+    <div class="content">
+      <div class="container-fluid">
+        <div class="row">
+
+          <div class="col-md-4">
+            <h4 class="title">Power</h4>
+            <p class="power" id="power">150</p>
+            <div class="progress" style="height: 20px;">
+              <div id="power_bar" class="progress-bar bg-success" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="800"></div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <h4 class="title">RPM</h4>
+            <p class="rpm" id="rpm">80</p>
+            <div class="progress" style="height: 20px;">
+              <div id="rpm_bar" class="progress-bar bg-info" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="120"></div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <h4 class="title">Speed</h4>
+            <p class="speed" id="speed">35</p>
+            <div class="progress" style="height: 20px;">
+              <div id="speed_bar" class="progress-bar bg-warning" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-12">
+        <div id="alerts"></div>
+      </div>
+      </div>
+
+        <div class="row">
+          <div class="col-md-12">
+            <div class="row" id="messageArea">
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-12">
+            <form action="">
+              <input id="m" autocomplete="off" /><button>Restart</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,23 @@
+[Unit]
+Description=ergoFACE service
+Requires=bluetooth.service network-online.target
+After=bluetooth.service network-online.target
+
+
+[Service]
+ExecStart=/usr/bin/node /home/pi/ergoFACE_BLE/server.js
+# Required on some systems
+#WorkingDirectory=/home/pi/ergoFACE_BLE
+Restart=always
+# Restart service after 10 seconds if node service crashes
+RestartSec=10
+# Output to syslog
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=nodejs-example
+#User=<alternate user>
+#Group=<alternate group>
+Environment=NODE_ENV=production PORT=3000
+
+[Install]
+WantedBy=multi-user.target
