@@ -75,7 +75,7 @@ This site is used to toggle between ERG and SIM mode and toggle between switchin
 * toggle set Power / switch gears
 * toggle socket messages - key / raw / error
 
-## current features
+## current features 0.5.6 beta
 * advanced webserver with dashboard and log messages
 * apps recognize BLE GATT FTM and CPC service
 ### in apps like ZWIFT / FULL GAZ
@@ -84,6 +84,10 @@ This site is used to toggle between ERG and SIM mode and toggle between switchin
 * use virtual gearbox of Daum bike to ride in SIM mode
 * use gpios (see gpio.js) to add hardware switches for more realistic ride and shifting experience, if not, use the jogwheel or +/- buttons on Daum ergobike 8008 TRS
 
-## tested apps
+### tested apps
 * FULL GAZ - SIM mode working; no rpm
 * ZWIFT - ERG mode working; SIM mode working; all signals working
+
+# outlook / features to be developed
+* start nodejs server and raspberry in accesspoint / hotspot mode to connect via mobile device and scan for your local WiFi and enter credentials
+* scan for updates via server and select ergoFACE versions, download and reboot
