@@ -3,14 +3,14 @@
 ## prerequisites
 * RS232 to USB converter
 * RS232 custom gender changer or "programing cable" like specified from DAUM
-* raspberry pi zero w / 3B+ with BLE onboard
-* nodejs (lts version) installed
+* raspberry pi zero w / 3B+ with BLE (Bluetooth low energy) onboard
+* nodejs (10.xx.x LTS) installed https://nodejs.org/en/
 
 ## setup - Install on a rasperypi
 * download the sources / dependencies listed in package.json
-* have a look at bleno setup and https://github.com/olympum/waterrower-ble
+* have a look at bleno setup https://github.com/noble/bleno
 
-```
+```shell
 npm install
 ```
 
@@ -30,7 +30,7 @@ switch to another gear, the power is correct and ZWIFT will react accordingly.
 remember: POWER = POWER
 
 * go to installation directory and start node server from command line
-```
+```shell
 sudo node server.js
 ```
 ### you can install the server as a service, to just plug the raspberry to a power source and ride on
@@ -76,8 +76,8 @@ This site is used to toggle between ERG and SIM mode and toggle between switchin
 * toggle socket messages - key / raw / error
 
 ## current features 0.5.6 beta
-* advanced webserver with dashboard and log messages
-* apps recognize BLE GATT FTM and CPC service
+* advanced webserver with dashboard and log messages based on Bootstrap v4.1.3
+* apps recognize BLE (Bluetooth low energy) GATT FTM (Fitness machine) and CPC (Cycling power and cadence) service
 ### in apps like ZWIFT / FULL GAZ
 * ERG mode is fully implemented (FTMS control point)
 * SIM mode is fully implemented (FTMS control point & physics simulation)
