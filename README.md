@@ -1,4 +1,9 @@
 # ergoFACE
+* forked from https://github.com/360manu/kettlerUSB2BLE
+* adjusted to work with Daum ergobike 8008TRS
+
+## the original project "ergoFACE concept"
+* can be found here https://github.com/weinzmi/ergoFACE
 
 ## prerequisites
 * RS232 to USB converter
