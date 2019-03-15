@@ -27,22 +27,22 @@ var mBike = 7 // mass in kg of the bike
 ```
 sudo node server.js
 ```
-** you can install the server as a service
+### you can install the server as a service
 
-*** copy ergoFACE.service from lib\systemd\system to your local system
+* copy ergoFACE.service from lib\systemd\system to your local system
 ```shell
 sudo chmod 644 /lib/systemd/system/ergoFACE.service
 ```
-*** configure
+* configure
 ```shell
 sudo systemctl daemon-reload
 sudo systemctl enable ergoFACE.service
 ```
-*** reboot
+* reboot
 ```shell
 sudo reboot
 ```
-*** check status of service
+* check status of service
 ```shell
 sudo systemctl status ergoFACE.service
 ```
