@@ -17,9 +17,34 @@ npm install
 it can take a while as bleno must be compiled from sources.
 
 ## launch
-
+* if SIM mode is a feature you want to use, edit daumSIM.js and change the simulation variables to fit yours
 ```
-node server.js
+var mRider = 80 // mass in kg of the rider
+var mBike = 7 // mass in kg of the bike
+```
+
+* go to installation directory and start node server from commandline
+```
+sudo node server.js
+```
+** you can install the server as a service
+
+*** copy ergoFACE.service from lib\systemd\system to your local system
+```shell
+sudo chmod 644 /lib/systemd/system/ergoFACE.service
+```
+*** configure
+```shell
+sudo systemctl daemon-reload
+sudo systemctl enable ergoFACE.service
+```
+*** reboot
+```shell
+sudo reboot
+```
+*** check status of service
+```shell
+sudo systemctl status ergoFACE.service
 ```
 
 * plug the RS232 to USB converter in any USB port
