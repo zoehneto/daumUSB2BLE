@@ -1,6 +1,6 @@
 var EventEmitter = require('events').EventEmitter
 var com = require('serialport')
-var DEBUG = false // turn this on for debug information in consol
+var DEBUG = true // turn this on for debug information in consol
 
 function daumUSB () {
   var self = this
@@ -109,8 +109,8 @@ function daumUSB () {
         }
       }
     } else {
-      for (i = 0; i < statesLen; i++) { // this loop is for parsing the datastream after gotAdressSuccess is true and we can use the adress for commands
-        if (states[i].toString(16) === daumCommands.run_Data && states[i + 1].toString(16) === daumCockpitAdress && states[i + 2].toString(16) === '00') { // and search for the runData and daumCockpitAdress and manuall watt program prefix
+      for (i = 0; i < (statesLen - 2); i++) { // this loop is for parsing the datastream after gotAdressSuccess is true and we can use the adress for commands
+        if (states[i].toString(16) === daumCommands.run_Data && states[i + 1].toString(16) === daumCockpitAdress && states[i + 2] === 0) { // and search for the runData and daumCockpitAdress and manuall watt program prefix
           index = i
           if (DEBUG) console.log('[daumUSB.js] - runData - [Index]: ', index)
           break // stop if prefix found and break
