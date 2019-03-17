@@ -60,7 +60,7 @@ sudo systemctl status ergoFACE.service
 
 * plug the RS232 to USB converter in any USB port
 * start your Daum ergobike 8008 TRS
-* ergoFACE will lookup for the cockpit adress and start receiving data
+* ergoFACE will lookup for the cockpit address and start receiving data
 * start an app like ZWIFT and your Daum bike will appear as "DAUM Ergobike 8008 TRS" device with two services (power & FTMS)
 
 ## website / server
@@ -87,12 +87,12 @@ This site is used to toggle between ERG and SIM mode and toggle between switchin
 * ERG mode is fully implemented (FTMS control point)
 * SIM mode is fully implemented (FTMS control point & physics simulation)
 * use virtual gearbox of Daum bike to ride in SIM mode
-* use gpios (see gpio.js) to add hardware switches for more realistic ride and shifting experience, if not, use the jogwheel or +/- buttons on Daum ergobike 8008 TRS
+* use gpios (see gpio.js) to add hardware switches for more realistic ride and shifting experience, if not, use the jog wheel or +/- buttons on Daum ergobike 8008 TRS
 
 ### tested apps
 * FULL GAZ - SIM mode working; no rpm
 * ZWIFT - ERG mode working; SIM mode working; all signals working
 
 # outlook / features to be developed
-* start nodejs server and raspberry in accesspoint / hotspot mode to connect via mobile device and scan for your local WiFi and enter credentials
+* start NodeJS server and raspberry in access point / hotspot mode to connect via mobile device and scan for your local Wi-Fi and enter credentials
 * scan for updates via server and select ergoFACE versions, download and reboot
