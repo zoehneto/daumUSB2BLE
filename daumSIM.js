@@ -8,6 +8,7 @@
 // and daumSIM calculates the correct power for the received speed from RS232
 // ///////////////////////////////////////////////////////////////
 var DEBUG = false
+var maxGrade = 8 // maximum gradient in %
 
 function daumSIM () {
   this.physics = function (windspeedz, gradez, crrz, cwz, rpmd, speedd) {
@@ -24,7 +25,11 @@ function daumSIM () {
     // ////////////////////////////////////////////////////////////////////////
     // ZWIFT simulation variables
     // ////////////////////////////////////////////////////////////////////////
-    var grade = gradez // gradiant in %
+    if (gradez > maxGrade) { // check if gradient received is to high for realistic riding experience
+      var grade = maxGrade // set to maximum gradient; means, no changes in resistance if gradient is greater than maximum
+    } else {
+      grade = gradez // gradiant in %
+    }
     // var angle = Math.atan(grade*0.01); // gradient in ° // through testing and reevaluation of algorythm, it is not neccesarry to have this in force calculation
     // var radiant = angle * 0.005555556 * Math.PI; // gradient in radiant (rad)
     var crr = 0.003 // crrz;  // coefficient of rolling resistance // the values sent from ZWIFT / FULLGAZ are crazy, specially FULLGAZ, when starting to decent, this drives up the wattage to above 600W
