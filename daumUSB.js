@@ -115,6 +115,10 @@ function daumUSB () {
           if (DEBUG) console.log('[daumUSB.js] - runData - [Index]: ', index)
           break // stop if prefix found and break
         }
+        if (i === statesLen - 3) {
+          if (DEBUG) console.log('[daumUSB.js] - runData - [Index]: WRONG PROGRAM SET - SET MANUAL WATTPROGRAM 00')
+          self.emitter.emit('error', '[daumUSB.js] - runData - [Index]: WRONG PROGRAM SET - SET MANUAL WATTPROGRAM 00')
+        }
       }
     }
     var data = {}
