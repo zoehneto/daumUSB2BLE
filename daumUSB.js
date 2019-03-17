@@ -110,7 +110,7 @@ function daumUSB () {
       }
     } else {
       for (i = 0; i < statesLen; i++) { // this loop is for parsing the datastream after gotAdressSuccess is true and we can use the adress for commands
-        if (states[i].toString(16) === daumCommands.run_Data && states[i + 1].toString(16) === daumCockpitAdress) { // and search for the runData and daumCockpitAdress prefix
+        if (states[i].toString(16) === daumCommands.run_Data && states[i + 1].toString(16) === daumCockpitAdress && states[i + 2].toString(16) === '00') { // and search for the runData and daumCockpitAdress and manuall watt program prefix
           index = i
           if (DEBUG) console.log('[daumUSB.js] - runData - [Index]: ', index)
           break // stop if prefix found and break
