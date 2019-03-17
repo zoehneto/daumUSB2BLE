@@ -93,7 +93,9 @@ io.on('connection', socket => {
 // shifting gears or power via gpio + hardware switches
 // /////////////////////////////////////////////////////////////////////////
 var geargpio = 1 // initialize to start from first gear
-var ratio = 2 // set ratio, to shift multiple gears with the press of a button.
+var ratio = 1 // set ratio, to shift multiple gears with the press of a button.
+var minGear = 1 // lowest gear
+var maxGear = 28 // highest gear
 shiftUp.watch((err, value) => {
   if (err) {
     io.emit('error', '[server.js] - gpio shift up: ' + err)
@@ -105,7 +107,7 @@ shiftUp.watch((err, value) => {
       if (DEBUG) console.log('[server.js] - increment Power')
       io.emit('raw', '[server.js] - increment Power')
     } else { // if mode is set to 'gear', we increment gears
-      if (geargpio < 27) {
+      if (geargpio < maxGear) {
         geargpio = geargpio + ratio // shift n gears at a time, to avoid too much shifting
         daumUSB.setGear(geargpio)
         if (DEBUG) console.log('[server.js] - Shift to Gear: ' + geargpio)
@@ -128,7 +130,7 @@ shiftDown.watch((err, value) => {
       if (DEBUG) console.log('[server.js] - decrement Power')
       io.emit('raw', '[server.js] - decrement Power')
     } else { // if mode is set to 'gear', we degrement gears
-      if (geargpio > 2) {
+      if (geargpio > minGear) {
         geargpio = geargpio - ratio // sift n gears at a time, to avoid too much shifting
         daumUSB.setGear(geargpio)
         if (DEBUG) console.log('[server.js] - Shift to Gear: ' + geargpio)
