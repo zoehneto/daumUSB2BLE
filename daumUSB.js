@@ -1,6 +1,6 @@
 var EventEmitter = require('events').EventEmitter
 var com = require('serialport')
-var DEBUG = true // turn this on for debug information in consol
+var DEBUG = false // turn this on for debug information in consol
 
 function daumUSB () {
   var self = this
