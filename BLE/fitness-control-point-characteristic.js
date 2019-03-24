@@ -127,10 +127,10 @@ class FitnessControlPoint extends Bleno.Characteristic {
         if (global.globalmode === 'ERG') {
           callback(this.buildResponse(state, ResultCode.success))
         } else if (global.globalmode === 'SIM') {
-          var windspeed = data.readInt16LE(2) * 0.001
+          var windspeed = data.readInt16LE(1) * 0.001
           var grade = data.readInt16LE(3) * 0.01
-          var crr = data.readUInt8(4) * 0.001 // not sure, if conversion is correct
-          var cw = data.readUInt8(5) * 0.01
+          var crr = data.readUInt8(5) * 0.0001
+          var cw = data.readUInt8(6) * 0.01
 
           if (DEBUG) console.log('[fitness-control-point-characteristic.js] - setIndoorBikeSimulationParameters - windspeed: ', windspeed)
           if (DEBUG) console.log('[fitness-control-point-characteristic.js] - setIndoorBikeSimulationParameters - grade: ', grade)
