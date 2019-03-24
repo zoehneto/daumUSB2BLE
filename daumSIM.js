@@ -32,8 +32,8 @@ function daumSIM () {
     }
     // var angle = Math.atan(grade*0.01); // gradient in ° // through testing and reevaluation of algorythm, it is not neccesarry to have this in force calculation
     // var radiant = angle * 0.005555556 * Math.PI; // gradient in radiant (rad)
-    var crr = 0.003 // crrz;  // coefficient of rolling resistance // the values sent from ZWIFT / FULLGAZ are crazy, specially FULLGAZ, when starting to decent, this drives up the wattage to above 600W
-    // var w = windspeedz * 1; //multiply with 1 to parse sting to float // the values sent from ZWIFT / FULLGAZ are crazy
+    var crr = crrz // coefficient of rolling resistance // the values sent from ZWIFT / FULLGAZ are crazy, specially FULLGAZ, when starting to decent, this drives up the wattage to above 600W
+    var w = windspeedz * 1 // multiply with 1 to parse sting to float // the values sent from ZWIFT / FULLGAZ are crazy
     var cd = cwz // coefficient of drag
     // ////////////////////////////////////////////////////////////////////////
     // DAUM values
@@ -55,7 +55,7 @@ function daumSIM () {
     if (DEBUG) console.log('[daumSIM.js] - forceofgravity: ', forceofgravity)
     var forcerollingresistance = g * Math.cos(Math.atan(grade / 100)) * mass * crr
     if (DEBUG) console.log('[daumSIM.js] - forcerollingresistance: ', forcerollingresistance)
-    var forceaerodynamic = 0.5 * cd * p * Math.pow(v, 2)
+    var forceaerodynamic = 0.5 * cd * p * Math.pow(v + w, 2)
     if (DEBUG) console.log('[daumSIM.js] - forceaerodynamic: ', forceaerodynamic)
     var simpower = (forceofgravity + forcerollingresistance + forceaerodynamic) * v / e
     if (DEBUG) console.log('[daumSIM.js] - SIM calculated power: ', simpower)
