@@ -123,11 +123,6 @@ function daumUSB () {
     }
     var data = {}
     if (states.length >= 19) { // just check if stream is more than value, this is obsulete, because of custom parser that is parsing 40 bytes
-      var speed = (states[7 + index])
-      if (!isNaN(speed) && (speed >= daumRanges.min_speed && speed <= daumRanges.max_speed)) {
-        data.speed = speed
-        global.globalspeed_daum = data.speed // global variables used, because I cannot code ;)
-      }
       var cadence = (states[6 + index])
       if (!isNaN(cadence) && (cadence >= daumRanges.min_rpm && cadence <= daumRanges.max_rpm)) {
         data.cadence = cadence
@@ -157,6 +152,17 @@ function daumUSB () {
         if (!isNaN(power) && (power >= daumRanges.min_power && power <= daumRanges.max_power)) {
           data.power = power * 5 // multiply with factor 5, see Daum spec
         }
+      }
+      // calculating the speed based on the RPM to gain some accuracy; speed signal is only integer
+      // as long os the gearRatio is the same as in the spec of DAUM, the actual speed on the display and the calculated one will be the same
+      var gearRatio = 1.75 + (data.gear - 1) * 0.098767 // the ratio starts from 42:24 and ends at 53:12; see TRS_8008 Manual page 57
+      var circumference = 210 // cirvumference in cm
+      var distance = gearRatio * circumference // distance in cm per rotation
+      var speed = data.rpm * distance * 0.0006 // speed in km/h
+      // var speed = (states[7 + index])
+      if (!isNaN(speed) && (speed >= daumRanges.min_speed && speed <= daumRanges.max_speed)) {
+        data.speed = Number(speed).toFixed(1) // reduce number of decimals after calculation to 1
+        global.globalspeed_daum = data.speed // global variables used, because I cannot code ;)
       }
       if (Object.keys(data).length > 0) self.emitter.emit('data', data) // emit data to server for further use
     } else {
