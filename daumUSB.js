@@ -126,6 +126,7 @@ function daumUSB () {
       var speed = (states[7 + index])
       if (!isNaN(speed) && (speed >= daumRanges.min_speed && speed <= daumRanges.max_speed)) {
         data.speed = speed
+        global.globalspeed_daum = data.speed // global variables used, because I cannot code ;)
       }
       var cadence = (states[6 + index])
       if (!isNaN(cadence) && (cadence >= daumRanges.min_rpm && cadence <= daumRanges.max_rpm)) {
@@ -137,10 +138,12 @@ function daumUSB () {
       var rpm = (states[6 + index])
       if (!isNaN(rpm) && (rpm >= daumRanges.min_rpm && rpm <= daumRanges.max_rpm)) {
         data.rpm = rpm
+        global.globalrpm_daum = data.rpm // global variables used, because I cannot code ;)
       }
       var gear = (states[16 + index])
       if (!isNaN(gear) && (gear >= daumRanges.min_gear && gear <= daumRanges.max_gear)) {
         data.gear = gear
+        global.globalgear_daum = data.gear // global variables used, because I cannot code ;)
       }
       var program = (states[2 + index])
       if (!isNaN(program) && (program >= daumRanges.min_program && program <= daumRanges.max_program)) {
@@ -155,8 +158,6 @@ function daumUSB () {
           data.power = power * 5 // multiply with factor 5, see Daum spec
         }
       }
-      global.globalspeed_daum = data.speed // global variables used, because I cannot code ;)
-      global.globalrpm_daum = data.rpm
       if (Object.keys(data).length > 0) self.emitter.emit('data', data) // emit data to server for further use
     } else {
       self.unknownHandler(numbers) // is obsolete, becasuse of custom parser that parses 40 bytes - but just in case to have some error handling

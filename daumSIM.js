@@ -11,7 +11,7 @@ var DEBUG = false
 var maxGrade = 8 // maximum gradient in %
 
 function daumSIM () {
-  this.physics = function (windspeedz, gradez, crrz, cwz, rpmd, speedd) {
+  this.physics = function (windspeedz, gradez, crrz, cwz, rpmd, speedd, geard) {
     if (DEBUG) console.log('[daumSIM.js] - physics calculation started')
     // io.emit('raw', 'Bike SIM Mode -physics calculation started')
     // ////////////////////////////////////////////////////////////////////////
@@ -38,9 +38,16 @@ function daumSIM () {
     // ////////////////////////////////////////////////////////////////////////
     // DAUM values
     // ////////////////////////////////////////////////////////////////////////
-    var v = speedd * 0.2778 // velocity in m/s
-    // var gear =  1; //  gear factor for RPM of DAUM // not needed until now, maybe to have a custom gear ratio
-    // var rpm =  rpmd; //  RPM from DAUM
+    // calculating the speed based on the RPM to gain some accuracy; speed signal is only integer
+    // this might be too slow from cylce time point of view, because BLE control point is the trigger for the execution of physics
+    // as long os the gearRatio is the same as in the spec of DAUM, the actual speed on the display and the calculated one will be the same
+    var gear = geard // actual gear from DAUM
+    var rpm = rpmd // actual RPM from DAUM
+    var gearRatio = 1.75 + (gear - 1) * 0.098767 // the ratio starts from 42:24 and ends at 53:12; see TRS_8008 Manual page 57
+    var circumference = 210 // cirvumference in cm
+    var distance = gearRatio * circumference // distance in cm per rotation
+    var speedRPM = rpm * distance * 0.0006 // speed in km
+    var v = speedRPM * 0.2778 // speed in m/s
     // ////////////////////////////////////////////////////////////////////////
     //  Constants
     // ////////////////////////////////////////////////////////////////////////

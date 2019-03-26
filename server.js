@@ -17,6 +17,7 @@ const { version } = require('./package.json') // get version number from package
 // ////////////////////////////////////////////////////////////////////////
 global.globalspeed_daum = 0
 global.globalrpm_daum = 0
+global.globalgear_daum = 0
 global.globalsimpower_daum = 0
 global.globalmode = 'SIM' // set this as default start mode here; in this mode ,ergoFACE is going to startup
 global.globalswitch = 'Gear' // set this as default start mode here; in this mode ,ergoFACE is going to startup
@@ -215,7 +216,7 @@ function serverCallback (message, ...args) {
       io.emit('grade', grade)
       io.emit('crr', crr)
       io.emit('cw', cw)
-      daumSIM.physics(windspeed, grade, crr, cw, global.globalrpm_daum, global.globalspeed_daum)
+      daumSIM.physics(windspeed, grade, crr, cw, global.globalrpm_daum, global.globalspeed_daum, global.globalgear_daum)
       daumUSB.setPower(power)
       io.emit('raw', '[server.js] - Bike in SIM Mode - set Power to : ' + power)
       io.emit('simpower', power)
