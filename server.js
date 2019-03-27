@@ -19,6 +19,10 @@ global.globalspeed_daum = 0
 global.globalrpm_daum = 0
 global.globalgear_daum = 0
 global.globalsimpower_daum = 0
+global.globalwindspeed_ble = 0
+global.globalgrade_ble = 0
+global.globalcrr_ble = 0.0040 // set once to have simulation available without BLE connected to apps
+global.globalcw_ble = 0.51 // set once to have simulation available without BLE connected to apps
 global.globalmode = 'SIM' // set this as default start mode here; in this mode ,ergoFACE is going to startup
 global.globalswitch = 'Gear' // set this as default start mode here; in this mode ,ergoFACE is going to startup
 // /////////////////////////////////////////////////////////////////////////
@@ -210,13 +214,17 @@ function serverCallback (message, ...args) {
       var grade = Number(args[1]).toFixed(1)
       var crr = Number(args[2]).toFixed(4)
       var cw = Number(args[3]).toFixed(2)
-      var power = Number(global.globalsimpower_daum).toFixed(0)
+      global.globalwindspeed_ble = windspeed
+      global.globalgrade_ble = grade
+      global.globalcrr_ble = crr
+      global.globalcw_ble = cw
       io.emit('raw', '[server.js] - Bike SIM Mode - [wind]: ' + windspeed + ' [grade]: ' + grade + ' [crr]: ' + crr + ' [cw]: ' + cw)
       io.emit('windspeed', windspeed)
       io.emit('grade', grade)
       io.emit('crr', crr)
       io.emit('cw', cw)
-      daumSIM.physics(windspeed, grade, crr, cw, global.globalrpm_daum, global.globalspeed_daum, global.globalgear_daum)
+      daumSIM.physics(global.globalwindspeed_ble, global.globalgrade_ble, global.globalcrr_ble, global.globalcw_ble, global.globalrpm_daum, global.globalspeed_daum, global.globalgear_daum)
+      var power = Number(global.globalsimpower_daum).toFixed(0)
       daumUSB.setPower(power)
       io.emit('raw', '[server.js] - Bike in SIM Mode - set Power to : ' + power)
       io.emit('simpower', power)

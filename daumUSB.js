@@ -1,6 +1,11 @@
 var EventEmitter = require('events').EventEmitter
 var com = require('serialport')
+var DaumSIM = require('./daumSIM')
 var DEBUG = false // turn this on for debug information in consol
+// /////////////////////////////////////////////////////////////////////////
+// instantiation
+// /////////////////////////////////////////////////////////////////////////
+var daumSIM = new DaumSIM()
 
 function daumUSB () {
   var self = this
@@ -163,8 +168,12 @@ function daumUSB () {
       if (!isNaN(speed) && (speed >= daumRanges.min_speed && speed <= daumRanges.max_speed)) {
         data.speed = Number(speed).toFixed(1) // reduce number of decimals after calculation to 1
         global.globalspeed_daum = data.speed // global variables used, because I cannot code ;)
+        if (global.globalmode === 'SIM') { // run power simulation here in parallel to server.js to enhance resolution of resistance, e.g.: ble only triggers sim once per second, but if you pedal faster, this needs to be here.
+          daumSIM.physics(global.globalwindspeed_ble, global.globalgrade_ble, global.globalcrr_ble, global.globalcw_ble, global.globalrpm_daum, global.globalspeed_daum, global.globalgear_daum)
+          self.setPower(Number(global.globalsimpower_daum).toFixed(0))
+        }
       }
-      if (Object.keys(data).length > 0) self.emitter.emit('data', data) // emit data to server for further use
+      if (Object.keys(data).length > 0) self.emitter.emit('data', data) // emit data for further use
     } else {
       self.unknownHandler(numbers) // is obsolete, becasuse of custom parser that parses 40 bytes - but just in case to have some error handling
     }
