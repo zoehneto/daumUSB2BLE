@@ -225,7 +225,7 @@ function serverCallback (message, ...args) {
       io.emit('cw', cw)
       daumSIM.physics(global.globalwindspeed_ble, global.globalgrade_ble, global.globalcrr_ble, global.globalcw_ble, global.globalrpm_daum, global.globalspeed_daum, global.globalgear_daum)
       var power = Number(global.globalsimpower_daum).toFixed(0)
-      daumUSB.setPower(power)
+      // daumUSB.setPower(power) // if this is used here, then some random power is transmitted to zwift, e.g.: 111 watts / 20sec
       io.emit('raw', '[server.js] - Bike in SIM Mode - set Power to : ' + power)
       io.emit('simpower', power)
       success = true
