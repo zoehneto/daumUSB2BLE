@@ -17,7 +17,7 @@ const { version } = require('./package.json') // get version number from package
 // ////////////////////////////////////////////////////////////////////////
 global.globalspeed_daum = 0
 global.globalrpm_daum = 0
-global.globalgear_daum = 0
+global.globalgear_daum = 1
 global.globalsimpower_daum = 0
 global.globalwindspeed_ble = 0
 global.globalgrade_ble = 0

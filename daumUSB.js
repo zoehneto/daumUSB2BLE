@@ -243,7 +243,7 @@ function daumUSB () {
   this.start = function () { // set gear as second, to enable switching gears with jog wheel or buttons in cockpit by default
     self.setProgram(0) // reset to program 0
     self.emitter.emit('key', '[daumUSB.js] - setProgram to 0')
-    self.setGear(1) // reset the gears, because i dont read the gears from daum, just write them
+    self.setGear(global.globalgear_daum) // reset the gears, because i dont read the gears from daum, just write them
     self.emitter.emit('key', '[daumUSB.js] - setGear to 0')
   }
   // //////////////////////////////////////////////////////////////////////////
