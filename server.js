@@ -113,7 +113,7 @@ shiftUp.watch((err, value) => {
       io.emit('raw', '[server.js] - increment Power')
     } else { // if mode is set to 'gear', we increment gears
       if (geargpio < maxGear) {
-        geargpio = geargpio + ratio // shift n gears at a time, to avoid too much shifting
+        geargpio = global.globalgear_daum + ratio // shift n gears at a time, to avoid too much shifting
         daumUSB.setGear(geargpio)
         if (DEBUG) console.log('[server.js] - Shift to Gear: ' + geargpio)
         io.emit('raw', '[server.js] - Shift to Gear: ' + geargpio)
@@ -136,7 +136,7 @@ shiftDown.watch((err, value) => {
       io.emit('raw', '[server.js] - decrement Power')
     } else { // if mode is set to 'gear', we degrement gears
       if (geargpio > minGear) {
-        geargpio = geargpio - ratio // sift n gears at a time, to avoid too much shifting
+        geargpio = global.globalgear_daum - ratio // sift n gears at a time, to avoid too much shifting
         daumUSB.setGear(geargpio)
         if (DEBUG) console.log('[server.js] - Shift to Gear: ' + geargpio)
         io.emit('raw', '[server.js] - Shift to Gear: ' + geargpio)
