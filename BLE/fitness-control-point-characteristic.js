@@ -97,7 +97,9 @@ class FitnessControlPoint extends Bleno.Characteristic {
         }
         break
 
-      case ControlPointOpCode.setTargetPower:
+      case ControlPointOpCode.setTargetPower: // this is ERG MODE
+        global.globalmode = 'ERG' // this is overriding the toggles from webserver
+        global.globalswitch = 'Power' // this is overriding the toggles from webserver
         if (DEBUG) console.log('[fitness-control-point-characteristic.js] - ControlPointOpCode.setTargetPower.')
         if (this.underControl) {
           var watt = data.readUInt16LE(1)
@@ -122,29 +124,24 @@ class FitnessControlPoint extends Bleno.Characteristic {
         if (DEBUG) console.log('[fitness-control-point-characteristic.js] - ControlPointOpCode.stopOrPause')
         callback(this.buildResponse(state, ResultCode.success))
         break
-      case ControlPointOpCode.setIndoorBikeSimulationParameters:
+      case ControlPointOpCode.setIndoorBikeSimulationParameters: // this is SIM MODE
+        global.globalmode = 'SIM' // this is overriding the toggles from webserver
+        global.globalswitch = 'Gear' // this is overriding the toggles from webserver
         if (DEBUG) console.log('[fitness-control-point-characteristic.js] - ControlPointOpCode.setIndoorBikeSimulationParameters')
-        if (global.globalmode === 'ERG') {
+        var windspeed = data.readInt16LE(1) * 0.001
+        var grade = data.readInt16LE(3) * 0.01
+        var crr = data.readUInt8(5) * 0.0001
+        var cw = data.readUInt8(6) * 0.01
+        if (DEBUG) console.log('[fitness-control-point-characteristic.js] - setIndoorBikeSimulationParameters - windspeed: ', windspeed)
+        if (DEBUG) console.log('[fitness-control-point-characteristic.js] - setIndoorBikeSimulationParameters - grade: ', grade)
+        if (DEBUG) console.log('[fitness-control-point-characteristic.js] - setIndoorBikeSimulationParameters - crr: ', crr)
+        if (DEBUG) console.log('[fitness-control-point-characteristic.js] - setIndoorBikeSimulationParameters - cw: ', cw)
+        if (this.serverCallback('simulation', windspeed, grade, crr, cw)) {
           callback(this.buildResponse(state, ResultCode.success))
-        } else if (global.globalmode === 'SIM') {
-          var windspeed = data.readInt16LE(1) * 0.001
-          var grade = data.readInt16LE(3) * 0.01
-          var crr = data.readUInt8(5) * 0.0001
-          var cw = data.readUInt8(6) * 0.01
-
-          if (DEBUG) console.log('[fitness-control-point-characteristic.js] - setIndoorBikeSimulationParameters - windspeed: ', windspeed)
-          if (DEBUG) console.log('[fitness-control-point-characteristic.js] - setIndoorBikeSimulationParameters - grade: ', grade)
-          if (DEBUG) console.log('[fitness-control-point-characteristic.js] - setIndoorBikeSimulationParameters - crr: ', crr)
-          if (DEBUG) console.log('[fitness-control-point-characteristic.js] - setIndoorBikeSimulationParameters - cw: ', cw)
-          if (this.serverCallback('simulation', windspeed, grade, crr, cw)) {
-            callback(this.buildResponse(state, ResultCode.success))
-          } else {
-            if (DEBUG) console.log('[fitness-control-point-characteristic.js] - simulation failed')
-            callback(this.buildResponse(state, ResultCode.operationFailed))
-          }
         } else {
-          break
-        };
+          if (DEBUG) console.log('[fitness-control-point-characteristic.js] - simulation failed')
+          callback(this.buildResponse(state, ResultCode.operationFailed))
+        }
         break
       default: // anything else : not yet implemented
         if (DEBUG) console.log('[fitness-control-point-characteristic.js] - State is not supported ' + state + '.')

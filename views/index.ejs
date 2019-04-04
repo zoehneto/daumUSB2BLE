@@ -141,6 +141,10 @@
       });
       socket.on('control', function (data) {
         $('#control').text(data);
+        if (data === 'SIM MODE' || data === 'ERG MODE') { // as soon as BLE takes over control, the toggle buttons are going to be disabled
+          $('#switch').bootstrapToggle('disable')
+          $('#mode').bootstrapToggle('disable')
+        }
       });
       socket.on('version', function (data) {
         $('#version').text(data);

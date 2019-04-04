@@ -1,7 +1,7 @@
 var EventEmitter = require('events').EventEmitter
 var com = require('serialport')
 var DaumSIM = require('./daumSIM')
-var DEBUG = false // turn this on for debug information in consol
+var DEBUG = false // turn this on for debug information in console
 // /////////////////////////////////////////////////////////////////////////
 // instantiation
 // /////////////////////////////////////////////////////////////////////////
@@ -243,7 +243,7 @@ function daumUSB () {
   this.start = function () { // set gear as second, to enable switching gears with jog wheel or buttons in cockpit by default
     self.setProgram(0) // reset to program 0
     self.emitter.emit('key', '[daumUSB.js] - setProgram to 0')
-    self.setGear(global.globalgear_daum) // reset the gears, because i dont read the gears from daum, just write them
+    self.setGear(global.globalgear_daum) // reset the gearsto 0; this forces daum cockpit to change gears instead of power when using the buttons or the jog wheel
     self.emitter.emit('key', '[daumUSB.js] - setGear to 0')
   }
   // //////////////////////////////////////////////////////////////////////////
@@ -255,10 +255,10 @@ function daumUSB () {
       clearInterval(self.writer) // stop writing to port
     }
     if (self.reader) {
-      clearInterval(self.reader) // reading 'run_data' from port
+      clearInterval(self.reader) // stop reading 'run_data' from port
     }
     if (self.readeradress) {
-      clearInterval(self.readeradress) // stop getting adress from port - this is canceled as soon as gotAdressSuccess is true, but in case stop happens before this event.
+      clearInterval(self.readeradress) // stop reading adress from port - this is canceled as soon as gotAdressSuccess is true, but in case stop happens before this event.
     }
   }
   // //////////////////////////////////////////////////////////////////////////

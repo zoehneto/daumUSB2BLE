@@ -205,6 +205,7 @@ function serverCallback (message, ...args) {
         daumUSB.setPower(watt)
         if (DEBUG) console.log('[server.js] - Bike in ERG Mode - set Power to: ', watt)
         io.emit('raw', '[server.js] - Bike in ERG Mode - set Power to: ' + watt)
+        io.emit('control', 'ERG MODE')
         success = true
       }
       break
@@ -228,6 +229,7 @@ function serverCallback (message, ...args) {
       // daumUSB.setPower(power) // if this is used here, then some random power is transmitted to zwift, e.g.: 111 watts / 20sec
       io.emit('raw', '[server.js] - Bike in SIM Mode - set Power to : ' + power)
       io.emit('simpower', power)
+      io.emit('control', 'SIM MODE')
       success = true
       break
   }
