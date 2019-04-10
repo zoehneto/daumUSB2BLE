@@ -1,6 +1,6 @@
 {
   "name": "ergoFACE BLE",
-  "version": "0.6.0 BETA",
+  "version": "0.6.1 BETA",
   "description": "Bridge for RS232 to USB to BLE FTMS service for DAUM Ergobike 8008 TRS",
   "main": "index.js",
   "scripts": {
