@@ -1,6 +1,6 @@
-
 var Bleno = require('bleno')
-var DEBUG = false
+const config = require('config-yml') // Use config for yaml config files in Node.js projects
+var DEBUG = config.DEBUG.BLE
 
 // Spec
 // https://developer.bluetooth.org/gatt/characteristics/Pages/CharacteristicViewer.aspx?u=org.bluetooth.characteristic.cycling_power_measurement.xml

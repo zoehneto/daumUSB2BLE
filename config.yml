@@ -1,0 +1,129 @@
+DEBUG:
+    daumUSB: false
+    server: false
+    daumSIM: false
+    BLE: false
+
+globals:
+    speed_daum: 0
+    rpm_daum: 0
+    gear_daum: 1
+    simpower_daum: 0
+    windspeed_ble: 0
+    grade_ble: 0
+    crr_ble: 0.0040
+    cw_ble: 0.51
+    mode: 'SIM'
+    switch: 'Gear'
+
+server:
+    port: 3000
+
+port:
+    baudrate: 9600
+    dataBits: 8
+    parity: 'none'
+    stopBits: 1
+    flowControl: false
+    parserLength: 40
+
+
+intervals:
+    flushNext: 50
+    getAdress: 100
+    runData: 500
+    restart: 1000
+
+timeouts:
+    open: 2000
+    start: 2000
+
+simulation:
+    maxGrade: 16
+    mRider: 78
+    mBike: 9
+    g: 9.8067
+    p: 1.225
+    e: 0.97
+
+gears:
+    ratioLow: 1.36
+    ratioHigh: 0.16765
+    circumference: 211.5
+    speedConversion: 0.0006
+
+gearbox:
+    g1: 1.36
+    g2: 1.48
+    g3: 1.62
+    g4: 1.79
+    g5: 2.00
+    g6: 2.17
+    g7: 2.38
+    g8: 2.63
+    g9: 2.94
+    g10: 3.33
+    g11: 3.57
+    g12: 3.85
+    g13: 4.17
+    g14: 4.55
+
+gpio:
+    geargpio: 1
+    ratio: 1
+    minGear: 1
+    maxGear: 14
+    debounceTimeout: 10
+    shiftUpPin: 4
+    shiftDownPin: 17
+
+daumCockpit:
+    adress: '00'
+    gotAdressSuccess: false
+
+daumCommands:
+    check_Cockpit: '10'
+    get_Adress: '11'
+    reset_Device: '12'
+    start_Prog: '21'
+    stop_Prog: '22'
+    set_Prog: '23'
+    ser_Person: '24'
+    start_Relax: '25'
+    wakeup: '30'
+    sleep: '31'
+    get_Temperature: '32'
+    run_Data: '40'
+    relax_Data: '42'
+    set_Watt: '51'
+    set_Pulse: '52'
+    set_Gear: '53'
+    set_Speed: '54'
+    set_Language: '60'
+    get_Language: '61'
+    set_Timer: '62'
+    get_Timer: '63'
+    set_Date: '64'
+    get_Data: '65'
+    get_Prog: '66'
+    get_Person: '67'
+    set_WattProfile: '68'
+    del_Person: '70'
+    del_IProg: '71'
+    get_Version: '73'
+    get_PersonData: '74'
+    get_PersonData1: '75'
+    ctrl_Sound: 'D3'
+
+daumRanges:
+      min_speed: 0
+      max_speed: 99
+      min_rpm: 0
+      max_rpm: 199
+      min_gear: 1
+      max_gear: 28
+      min_program: 0
+      max_program: 79
+      min_power: 5
+      max_power: 160
+      power_factor: 5

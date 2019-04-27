@@ -1,6 +1,5 @@
 // Doc: https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.fitness_machine.xml
 const Bleno = require('bleno')
-
 const FitnessControlPoint = require('./fitness-control-point-characteristic')
 const IndoorBikeDataCharacteristic = require('./indoor-bike-data-characteristic')
 const StaticReadCharacteristic = require('./static-read-characteristic')

@@ -1,7 +1,8 @@
 var EventEmitter = require('events').EventEmitter
 var com = require('serialport')
 var DaumSIM = require('./daumSIM')
-var DEBUG = false // turn this on for debug information in console
+const config = require('config-yml') // Use config for yaml config files in Node.js projects
+var DEBUG = config.DEBUG.daumUSB // turn this on for debug information in console
 // /////////////////////////////////////////////////////////////////////////
 // instantiation
 // /////////////////////////////////////////////////////////////////////////
@@ -16,54 +17,8 @@ function daumUSB () {
   self.readeradress = null // used for 'getAdress' command
   self.emitter = new EventEmitter()
 
-  var daumCockpitAdress = '00' // this script is looking for the adress, this is working, for default, I'll set this to 00
-  var gotAdressSuccess = false // false by default to scan for cockpit adress; if adress cannot be retrieved, there will be no interaction with daum.
-  var daumCommands = { // Daum RS232 commands
-    check_Cockpit: '10',
-    get_Adress: '11',
-    reset_Device: '12',
-    start_Prog: '21',
-    stop_Prog: '22',
-    set_Prog: '23',
-    ser_Person: '24',
-    start_Relax: '25',
-    wakeup: '30',
-    sleep: '31',
-    get_Temperature: '32',
-    run_Data: '40',
-    relax_Data: '42',
-    set_Watt: '51',
-    set_Pulse: '52',
-    set_Gear: '53',
-    set_Speed: '54',
-    set_Language: '60',
-    get_Language: '61',
-    set_Timer: '62',
-    get_Timer: '63',
-    set_Date: '64',
-    get_Data: '65',
-    get_Prog: '66',
-    get_Person: '67',
-    set_WattProfile: '68',
-    del_Person: '70',
-    del_IProg: '71',
-    get_Version: '73',
-    get_PersonData: '74',
-    get_PersonData1: '75',
-    ctrl_Sound: 'D3'
-  }
-  var daumRanges = { // Daum value ranges - used for data validation
-    min_speed: 0,
-    max_speed: 99,
-    min_rpm: 0,
-    max_rpm: 199,
-    min_gear: 1,
-    max_gear: 28,
-    min_program: 0,
-    max_program: 79,
-    min_power: 5,
-    max_power: 160
-  }
+  var daumCockpitAdress = config.daumCockpit.adress // this script is looking for the adress, this is working, for default, I'll set this to 00
+  var gotAdressSuccess = config.daumCockpit.gotAdressSuccess // false by default to scan for cockpit adress; if adress cannot be retrieved, there will be no interaction with daum.
   // //////////////////////////////////////////////////////////////////////////
   // push data in queue befor flushNext is writing it to port
   // //////////////////////////////////////////////////////////////////////////
@@ -100,22 +55,23 @@ function daumUSB () {
       var i
       for (i = 0; i < statesLen; i++) {
         if (DEBUG) console.log('[daumUSB.js] - getAdress - [Index]: ', i, ' ', states[i])
-        if (states[i].toString(16) === daumCommands.get_Adress) { // search for getAdress prefix
+        if (states[i].toString(16) === config.daumCommands.get_Adress) { // search for getAdress prefix
           var index = i
           if (DEBUG) console.log('[daumUSB.js] - getAdress - [Index]: ', index)
           daumCockpitAdress = (states[1 + index]).toString() // get the adress from the stream by using the index
           if (DEBUG) console.log('[daumUSB.js] - getAdress - [Adress]: ', daumCockpitAdress)
           self.emitter.emit('key', '[daumUSB.js] - getAdress - [Adress]: ' + daumCockpitAdress)
-          gotAdressSuccess = true // adress is retrieved, lets set this to true to inform other functions that they can proceed now
-          self.start() // as soon as we have the adress, we set the gears and cockpit to default
-          if (DEBUG) console.log('[daumUSB.js] - getAdress - [gotAdressSuccess]: ', gotAdressSuccess)
           clearInterval(self.readeradress) // stop looking for adress
+          self.pending = [] // clear pending array
+          gotAdressSuccess = true // adress is retrieved, lets set this to true to inform other functions that they can proceed now
+          setTimeout(self.start, config.timeouts.start) // timeout is neccesarry to changes gears back to 1; there is an invalid value send, that sets gear 17 = 0x11, this should be filtered before data is read, but does not work
+          if (DEBUG) console.log('[daumUSB.js] - getAdress - [gotAdressSuccess]: ', gotAdressSuccess)
           break // stop if prefix found and break
         }
       }
     } else {
       for (i = 0; i < (statesLen - 2); i++) { // this loop is for parsing the datastream after gotAdressSuccess is true and we can use the adress for commands
-        if (states[i].toString(16) === daumCommands.run_Data && states[i + 1].toString(16) === daumCockpitAdress && states[i + 2] === 0) { // and search for the runData and daumCockpitAdress and manuall watt program prefix
+        if (states[i].toString(16) === config.daumCommands.run_Data && states[i + 1].toString(16) === daumCockpitAdress && states[i + 2] === 0) { // and search for the runData and daumCockpitAdress and manuall watt program prefix
           index = i
           if (DEBUG) console.log('[daumUSB.js] - runData - [Index]: ', index)
           break // stop if prefix found and break
@@ -127,26 +83,30 @@ function daumUSB () {
       }
     }
     var data = {}
-    if (states.length >= 19) { // just check if stream is more than value, this is obsulete, because of custom parser that is parsing 40 bytes
-      var cadence = (states[6 + index])
-      if (!isNaN(cadence) && (cadence >= daumRanges.min_rpm && cadence <= daumRanges.max_rpm)) {
-        data.cadence = cadence
-      }
-      var hr = 111 // !!! can be deleted - have to check BLE code on dependencies
-      if (!isNaN(hr)) { data.hr = hr } // !!! can be deleted - have to check BLE code on dependencies
+    if (states.length >= 19 && gotAdressSuccess === true) { // gotAdressSuccess check to avoid invalid values 0x11 = 17 at startup; just check if stream is more than value, this is obsulete, because of custom parser that is parsing 40 bytes
+      // var cadence = (states[6 + index])
+      // if (!isNaN(cadence) && (cadence >= config.daumRanges.min_rpm && cadence <= config.daumRanges.max_rpm)) {
+      //   data.cadence = cadence
+      // }
+      // var hr = 99 // !!! can be deleted - have to check BLE code on dependencies
+      // if (!isNaN(hr)) { data.hr = hr } // !!! can be deleted - have to check BLE code on dependencies
 
       var rpm = (states[6 + index])
-      if (!isNaN(rpm) && (rpm >= daumRanges.min_rpm && rpm <= daumRanges.max_rpm)) {
+      if (!isNaN(rpm) && (rpm >= config.daumRanges.min_rpm && rpm <= config.daumRanges.max_rpm)) {
         data.rpm = rpm
         global.globalrpm_daum = data.rpm // global variables used, because I cannot code ;)
       }
       var gear = (states[16 + index])
-      if (!isNaN(gear) && (gear >= daumRanges.min_gear && gear <= daumRanges.max_gear)) {
+      if (!isNaN(gear) && (gear >= config.daumRanges.min_gear && gear <= config.daumRanges.max_gear)) {
+        if (gear > config.gpio.maxGear) { // beacause Daum has by default 28 gears, check and overwrite if gpio maxGear is lower
+          gear = config.gpio.maxGear // ceiling the maxGear with parameter
+          self.setGear(gear) // overwrite gear to Daum
+        }
         data.gear = gear
         global.globalgear_daum = data.gear // global variables used, because I cannot code ;)
       }
       var program = (states[2 + index])
-      if (!isNaN(program) && (program >= daumRanges.min_program && program <= daumRanges.max_program)) {
+      if (!isNaN(program) && (program >= config.daumRanges.min_program && program <= config.daumRanges.max_program)) {
         data.program = program
       }
       if (rpm === 0) { // power -  25 watt will allways be transmitted by daum; set to 0 if rpm is 0 to avoid rolling if stand still in applications like zwift or fullgaz
@@ -154,18 +114,19 @@ function daumUSB () {
         data.power = power
       } else {
         power = (states[5 + index])
-        if (!isNaN(power) && (power >= daumRanges.min_power && power <= daumRanges.max_power)) {
-          data.power = power * 5 // multiply with factor 5, see Daum spec
+        if (!isNaN(power) && (power >= config.daumRanges.min_power && power <= config.daumRanges.max_power)) {
+          data.power = power * config.daumRanges.power_factor // multiply with factor 5, see Daum spec
         }
       }
       // calculating the speed based on the RPM to gain some accuracy; speed signal is only integer
       // as long os the gearRatio is the same as in the spec of DAUM, the actual speed on the display and the calculated one will be the same
-      var gearRatio = 1.75 + (data.gear - 1) * 0.098767 // the ratio starts from 42:24 and ends at 53:12; see TRS_8008 Manual page 57
-      var circumference = 210 // cirvumference in cm
+      // var gearRatio = config.gears.ratioLow + (data.gear - 1) * config.gears.ratioHigh // MICHAEL's: 34:25 & 50:11 20 speed; DAUM: the ratio starts from 42:24 and ends at 53:12; see TRS_8008 Manual page 57
+      var gearRatio = config.gearbox['g' + data.gear] // MICHAEL's: 34:25 & 50:11 20 speed; DAUM: the ratio starts from 42:24 and ends at 53:12; see TRS_8008 Manual page 57
+      var circumference = config.gears.circumference // cirvumference in cm
       var distance = gearRatio * circumference // distance in cm per rotation
-      var speed = data.rpm * distance * 0.0006 // speed in km/h
+      var speed = data.rpm * distance * config.gears.speedConversion // speed in km/h
       // var speed = (states[7 + index])
-      if (!isNaN(speed) && (speed >= daumRanges.min_speed && speed <= daumRanges.max_speed)) {
+      if (!isNaN(speed) && (speed >= config.daumRanges.min_speed && speed <= config.daumRanges.max_speed)) {
         data.speed = Number(speed).toFixed(1) // reduce number of decimals after calculation to 1
         global.globalspeed_daum = data.speed // global variables used, because I cannot code ;)
         if (global.globalmode === 'SIM') { // run power simulation here in parallel to server.js to enhance resolution of resistance, e.g.: ble only triggers sim once per second, but if you pedal faster, this needs to be here.
@@ -200,25 +161,25 @@ function daumUSB () {
           if (DEBUG) console.log('[daumUSB.js] - open - Ergobike found on port ' + p.comName)
           self.emitter.emit('key', '[daumUSB.js] - Ergobike found on port ' + p.comName)
           var port = new com.SerialPort(p.comName, {
-            baudrate: 9600,
-            dataBits: 8,
-            parity: 'none',
-            stopBits: 1,
-            flowControl: false,
-            parser: com.parsers.byteLength(40) // custom parser set to byte length that is more than the actual response message of ergobike, but no other way possible right know
+            baudrate: config.port.baudrate,
+            dataBits: config.port.dataBits,
+            parity: config.port.parity,
+            stopBits: config.port.stopBits,
+            flowControl: config.port.flowControl,
+            parser: com.parsers.byteLength(config.port.parserLength) // custom parser set to byte length that is more than the actual response message of ergobike, but no other way possible right know
           }, false) // thats why the index loops in 'readAndDispatch' are used to get the prefix of each command
           port.open(function () {
             self.port = port
             port.on('data', self.readAndDispatch)
-            self.writer = setInterval(self.flushNext, 50) // this is writing the data to the port; i've put here the timeout of DAUM interface spec; 50ms
+            self.writer = setInterval(self.flushNext, config.intervals.flushNext) // this is writing the data to the port; i've put here the timeout of DAUM interface spec; 50ms
             if (gotAdressSuccess === false) { // check, otherwise after a restart via webserver, this will run again
               if (DEBUG) console.log('[daumUSB.js] - looking for cockpit adress')
               self.emitter.emit('key', '[daumUSB.js] - looking for cockpit adress')
-              self.readeradress = setInterval(self.getAdress, 100) // continiously get adress from ergobike, the interval is canceled if gotAdressSuccess is true
+              self.readeradress = setInterval(self.getAdress, config.intervals.getAdress) // continiously get adress from ergobike, the interval is canceled if gotAdressSuccess is true
             }
             if (DEBUG) console.log('[daumUSB.js] - runData')
             self.emitter.emit('key', '[daumUSB.js] - runData')
-            self.reader = setInterval(self.runData, 500) // continiously get 'run_Data' from ergobike; 500ms means, every 1000ms a buffer
+            self.reader = setInterval(self.runData, config.intervals.runData) // continiously get 'run_Data' from ergobike; 500ms means, every 1000ms a buffer
           })
         }
       })
@@ -234,8 +195,8 @@ function daumUSB () {
       self.stop()
       self.port.close()
     }
-    setTimeout(self.open, 2000)
-    setTimeout(self.start, 2000)
+    setTimeout(self.open, config.timeouts.open)
+    setTimeout(self.start, config.timeouts.start)
   }
   // //////////////////////////////////////////////////////////////////////////
   // start sequence - this is just a dummy, because getAdress is used during port initialization
@@ -243,7 +204,7 @@ function daumUSB () {
   this.start = function () { // set gear as second, to enable switching gears with jog wheel or buttons in cockpit by default
     self.setProgram(0) // reset to program 0
     self.emitter.emit('key', '[daumUSB.js] - setProgram to 0')
-    self.setGear(global.globalgear_daum) // reset the gearsto 0; this forces daum cockpit to change gears instead of power when using the buttons or the jog wheel
+    self.setGear(config.daumRanges.min_gear) // reset the gearsto 0; this forces daum cockpit to change gears instead of power when using the buttons or the jog wheel
     self.emitter.emit('key', '[daumUSB.js] - setGear to 0')
   }
   // //////////////////////////////////////////////////////////////////////////
@@ -265,7 +226,7 @@ function daumUSB () {
   // set daum command function - general function for sending data - still testing
   // //////////////////////////////////////////////////////////////////////////
   this.setDaumCommand = function (command, adress, sendData) {
-    if (command !== daumCommands.get_Adress) {
+    if (command !== config.daumCommands.get_Adress) {
       if (gotAdressSuccess === true) {
         if (DEBUG) console.log('[daumUSB.js] - set command [0x' + command + ']: ' + sendData)
         if (sendData === 'none') { // this is for commands that just have command and adress - no data
@@ -276,6 +237,7 @@ function daumUSB () {
         self.write(datas)
       } else { // if no cockpit adress found, just post the message and not execute the command
         if (DEBUG) console.log('[daumUSB.js] - cannot set command [0x' + command + '] - no cockpit adress')
+        self.emitter.emit('error', '[daumUSB.js] - cannot set command [0x' + command + '] - no cockpit adress')
       }
     } else { // this is just for get adress
       datas = Buffer.from(command, 'hex')
@@ -286,46 +248,46 @@ function daumUSB () {
   // get cockpit adress - simplified by using setDaumCommand function
   // //////////////////////////////////////////////////////////////////////////
   this.getAdress = function () {
-    self.setDaumCommand(daumCommands.get_Adress, 'none', 'none')
+    self.setDaumCommand(config.daumCommands.get_Adress, 'none', 'none')
   }
   // //////////////////////////////////////////////////////////////////////////
   // get person data 1
   // //////////////////////////////////////////////////////////////////////////
   this.getPersonData = function () {
-    self.setDaumCommand(daumCommands.get_PersonData, daumCockpitAdress, 'none')
+    self.setDaumCommand(config.daumCommands.get_PersonData, daumCockpitAdress, 'none')
   }
   // //////////////////////////////////////////////////////////////////////////
   // get 'run_Data' from ergobike
   // //////////////////////////////////////////////////////////////////////////
   this.runData = function () {
-    self.setDaumCommand(daumCommands.run_Data, daumCockpitAdress, 'none')
+    self.setDaumCommand(config.daumCommands.run_Data, daumCockpitAdress, 'none')
   }
   // //////////////////////////////////////////////////////////////////////////
   // set the power resistance
   // //////////////////////////////////////////////////////////////////////////
   this.setPower = function (power) { // power validation is done here to dont loose quality in other functions
-    if (power < 0) power = 0 // cut negative power values from simulation
-    if (power > 800) power = 800 // cut too high power calculations
-    var ergopower = (Math.ceil(power / 5) * 5) / 5 // round up and to step of 5 to match daum spec and devide by 5
-    self.setDaumCommand(daumCommands.set_Watt, daumCockpitAdress, ergopower)
+    if (power < config.daumRanges.min_power * config.daumRanges.power_factor) power = config.daumRanges.min_power * config.daumRanges.power_factor // cut negative or too low power values from simulation
+    if (power > config.daumRanges.max_power * config.daumRanges.power_factor) power = config.daumRanges.max_power * config.daumRanges.power_factor // cut too high power calculations
+    var ergopower = Math.round(power / config.daumRanges.power_factor) // round up and to step of 5 to match daum spec and devide by 5
+    self.setDaumCommand(config.daumCommands.set_Watt, daumCockpitAdress, ergopower)
   }
   // //////////////////////////////////////////////////////////////////////////
   // set a program
   // //////////////////////////////////////////////////////////////////////////
   this.setProgram = function (programID) {
-    self.setDaumCommand(daumCommands.set_Prog, daumCockpitAdress, programID)
+    self.setDaumCommand(config.daumCommands.set_Prog, daumCockpitAdress, programID)
   }
   // //////////////////////////////////////////////////////////////////////////
   // set watt profile / increment or decrement 5 watt
   // //////////////////////////////////////////////////////////////////////////
   this.setWattProfile = function (profile) {
-    self.setDaumCommand(daumCommands.set_WattProfile, daumCockpitAdress, profile)
+    self.setDaumCommand(config.daumCommands.set_WattProfile, daumCockpitAdress, profile)
   }
   // //////////////////////////////////////////////////////////////////////////
   // set a gear
   // //////////////////////////////////////////////////////////////////////////
   this.setGear = function (gear) {
-    self.setDaumCommand(daumCommands.set_Gear, daumCockpitAdress, gear)
+    self.setDaumCommand(config.daumCommands.set_Gear, daumCockpitAdress, gear)
   }
   // //////////////////////////////////////////////////////////////////////////
   // to string ????????? - self.toString is not used here
