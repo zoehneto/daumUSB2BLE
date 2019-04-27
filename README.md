@@ -22,17 +22,42 @@ npm install
 it can take a while as bleno must be compiled from sources.
 
 ## launch
-* if SIM mode is a feature you want to use, edit daumSIM.js and change the simulation variables to fit yours
+* if SIM mode is a feature you want to use, edit the parameters in config.yml to fit yours
 ```
-var mRider = 80 // mass in kg of the rider
-var mBike = 7 // mass in kg of the bike
+simulation:
+    maxGrade: 16 // maximum grade, higher than this, will be cut
+    mRider: 78 // weight of you, the rider
+    mBike: 9 // weight of your bike
+
+gearbox: // this are the gear ratios used for each gear
+    g1: 1.36
+    g2: 1.48
+    g3: 1.62
+    g4: 1.79
+    g5: 2.00
+    g6: 2.17
+    g7: 2.38
+    g8: 2.63
+    g9: 2.94
+    g10: 3.33
+    g11: 3.57
+    g12: 3.85
+    g13: 4.17
+    g14: 4.55
 ```
-### this data is only used for:
-* calculating the power for the current speed for the current rpm and gear of Daum ergobike
-apps like ZWIFT are calculating the in game speed based on the power output of Daum ergobike sent via BLE
-and the in game user settings, like height and weight. so if simulation of ergoFACE is not realistic, just
-switch to another gear, the power is correct and ZWIFT will react accordingly.
-remember: POWER = POWER
+
+## GIOPs for shifting gears
+* if you want to use 2 external buttons for shifting gears, edit the parameters in config.yml to fit yours
+```
+gpio:
+    geargpio: 1 // start gear for initializing
+    ratio: 1 // how many gears are shifted with one push of a button
+    minGear: 1 // lowest gear possible
+    maxGear: 14 // highest gear possible; has to match gearbox
+    debounceTimeout: 10
+    shiftUpPin: 4 // GPIO pin for shift up
+    shiftDownPin: 17 // GPIO pin for shift down
+```
 
 * go to installation directory and start node server from command line
 ```shell
@@ -76,17 +101,17 @@ This site is used to toggle between ERG and SIM mode and toggle between switchin
 * stop / restart RS232 interface via server
 * select gears
 * select program
-* toggle ERG / SIM Mode
 * toggle set Power / switch gears
 * toggle socket messages - key / raw / error
 
-## current features 0.5.6 beta
+## current features 0.6.4 BETA
+### common
 * advanced webserver with dashboard and log messages based on Bootstrap v4.1.3
 * apps recognize BLE (Bluetooth low energy) GATT FTM (Fitness machine) and CPC (Cycling power and cadence) service
-### in apps like ZWIFT / FULL GAZ
-* ERG mode is fully implemented (FTMS control point)
-* SIM mode is fully implemented (FTMS control point & physics simulation)
-* use virtual gearbox of Daum bike to ride in SIM mode
+### in ZWIFT
+* ERG mode is fully implemented (FTMS control point), can be switched in workouts via ZWIFT app.
+* SIM mode is fully implemented (FTMS control point) and physics simulation based on parameters send from ZWIFT and parameters input by the user - see section "launch"
+* use virtual gearbox and use Daum buttons and jog wheel to switch gears
 * use gpios (see gpio.js) to add hardware switches for more realistic ride and shifting experience, if not, use the jog wheel or +/- buttons on Daum ergobike 8008 TRS
 
 ### tested apps
