@@ -1,8 +1,8 @@
 DEBUG:
-    daumUSB: false
-    server: false
-    daumSIM: false
-    BLE: false
+    daumUSB: true
+    server: true
+    daumSIM: true
+    BLE: true
 
 globals:
     speed_daum: 0
@@ -40,7 +40,7 @@ timeouts:
 
 simulation:
     maxGrade: 16
-    mRider: 78
+    mRider: 65
     mBike: 9
     g: 9.8067
     p: 1.225
