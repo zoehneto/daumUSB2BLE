@@ -1,26 +1,24 @@
-var Gpio = require('onoff').Gpio;
-var EventEmitter = require('events').EventEmitter;
-var shiftUp = new Gpio(4, 'in', 'rising', {debounceTimeout: 10});
-var shiftDown = new Gpio(17, 'in', 'rising', {debounceTimeout: 10});
-var DEBUG = true;
+const Gpio = require('onoff').Gpio;
+const EventEmitter = require('events').EventEmitter;
+const shiftUp = new Gpio(4, 'in', 'rising', {debounceTimeout: 10});
+const shiftDown = new Gpio(17, 'in', 'rising', {debounceTimeout: 10});
+const DEBUG = true;
 
 function gpio() {
-
-
-  var gear = 0;
+  let gear = 0;
 
   this.gears = function () {
-    var self = this;
+    const self = this;
     self.emitter = new EventEmitter();
     shiftUp.watch((err, value) => {
       if (err) {
         // self.emitter.emit('error', err );
         throw err;
-      };
+      }
       gear = gear + 1;
 
       self.emitter.emit('key', gear);
-      self.emitter.emit('setGear', gear.);
+      self.emitter.emit('setGear', gear);
       if (DEBUG) console.log("[gpio.js] Shift to Gear: " + gear);
     });
 
@@ -32,7 +30,7 @@ function gpio() {
       if (err) {
         // self.emitter.emit('error', err );
         throw err;
-      };
+      }
       gear = gear - 1;
       if (DEBUG) console.log("[gpio.js] Shift to Gear: " + gear);
       self.emitter.emit('setGear', gear);
@@ -45,4 +43,4 @@ function gpio() {
 
 }
 
-module.exports = gpio
+module.exports = gpio;
