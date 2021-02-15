@@ -1,6 +1,6 @@
 # ergoFACE
-* forked from https://github.com/360manu/kettlerUSB2BLE
-* adjusted to work with Daum ergobike 8008TRS
+* forked from https://github.com/weinzmi/daumUSB2BLE
+* adjusted to work with Daum ergobike 8008TRS PRO
 
 ## the original project "ergoFACE concept"
 * can be found here https://github.com/weinzmi/ergoFACE
@@ -8,8 +8,11 @@
 ## prerequisites
 * RS232 to USB converter
 * RS232 custom gender changer or "programing cable" like specified from DAUM
-* raspberry pi zero w / 3B+ with BLE (Bluetooth low energy) onboard
-* nodejs (10.xx.x LTS) installed https://nodejs.org/en/
+* raspberry pi 3 Mod. A+ with BLE (Bluetooth low energy) onboard
+* nodejs
+  * see https://nodejs.org/en/
+  * version 9.11.2 works for me (NOTE: this version is pretty old and should be updated)
+
 
 ## setup - Install on a rasperypi
 * download the sources / dependencies listed in package.json
@@ -46,7 +49,7 @@ gearbox: // this are the gear ratios used for each gear
     g14: 4.55
 ```
 
-## GIOPs for shifting gears
+## GPIOs for shifting gears
 * if you want to use 2 external buttons for shifting gears, edit the parameters in config.yml to fit yours
 ```
 gpio:
