@@ -1,6 +1,11 @@
-var Bleno = require('bleno')
-const config = require('config-yml') // Use config for yaml config files in Node.js projects
-var DEBUG = config.DEBUG.BLE
+const Bleno = require('bleno');
+const config = require('config-yml');
+
+function log (msg) {
+  if (config.DEBUG.BLE) {
+    console.log(msg);
+  }
+}
 
 // Spec
 // https://developer.bluetooth.org/gatt/characteristics/Pages/CharacteristicViewer.aspx?u=org.bluetooth.characteristic.cycling_power_measurement.xml
@@ -27,28 +32,28 @@ class CyclingPowerMeasurementCharacteristic extends Bleno.Characteristic {
           value: Buffer.alloc(2)
         })
       ]
-    })
-    this._updateValueCallback = null
+    });
+    this._updateValueCallback = null;
   }
 
   onSubscribe (maxValueSize, updateValueCallback) {
-    if (DEBUG) console.log('[cycling-power-measurement-characteristic.js] - client subscribed to PM')
-    this._updateValueCallback = updateValueCallback
-    return this.RESULT_SUCCESS
+    log('[cycling-power-measurement-characteristic.js] - client subscribed to PM');
+    this._updateValueCallback = updateValueCallback;
+    return this.RESULT_SUCCESS;
   }
 
   onUnsubscribe () {
-    if (DEBUG) console.log('[cycling-power-measurement-characteristic.js] - client unsubscribed from PM')
-    this._updateValueCallback = null
-    return this.RESULT_UNLIKELY_ERROR
+    log('[cycling-power-measurement-characteristic.js] - client unsubscribed from PM');
+    this._updateValueCallback = null;
+    return this.RESULT_UNLIKELY_ERROR;
   }
 
   notify (event) {
     if (!('power' in event) && !('rpm' in event)) {
       // ignore events with no power and no crank data
-      return this.RESULT_SUCCESS
+      return this.RESULT_SUCCESS;
     }
-    var buffer = new Buffer.alloc(8)
+    const buffer = new Buffer.alloc(8);
     // flags
     // 00000001 - 1   - 0x001 - Pedal Power Balance Present
     // 00000010 - 2   - 0x002 - Pedal Power Balance Reference
@@ -59,25 +64,25 @@ class CyclingPowerMeasurementCharacteristic extends Bleno.Characteristic {
     // 01000000 - 64  - 0x040 - Extreme Force Magnitudes Present
     // 10000000 - 128 - 0x080 - Extreme Torque Magnitudes Present
 
-    buffer.writeUInt16LE(0x0000, 0)
+    buffer.writeUInt16LE(0x0000, 0);
 
     if ('power' in event) {
-      var power = event.power
-      if (DEBUG) console.log('[cycling-power-measurement-characteristic.js] - power: ' + power)
-      buffer.writeInt16LE(power, 2)
+      const power = event.power;
+      log('[cycling-power-measurement-characteristic.js] - power: ' + power);
+      buffer.writeInt16LE(power, 2);
     }
 
     if ('rpm' in event) {
-      var rpm = event.rpm
-      if (DEBUG) console.log('[cycling-power-measurement-characteristic.js] - rpm: ' + event.rpm)
-      buffer.writeUInt16LE(rpm, 4)
+      const rpm = event.rpm;
+      log('[cycling-power-measurement-characteristic.js] - rpm: ' + event.rpm);
+      buffer.writeUInt16LE(rpm, 4);
     }
 
     if (this._updateValueCallback) {
-      this._updateValueCallback(buffer)
+      this._updateValueCallback(buffer);
     }
-    return this.RESULT_SUCCESS
+    return this.RESULT_SUCCESS;
   }
 }
 
-module.exports = CyclingPowerMeasurementCharacteristic
+module.exports = CyclingPowerMeasurementCharacteristic;

@@ -1,4 +1,4 @@
-const Bleno = require('bleno')
+const Bleno = require('bleno');
 
 class StaticReadCharacteristic extends Bleno.Characteristic {
   constructor (uuid, description, value) {
@@ -12,11 +12,11 @@ class StaticReadCharacteristic extends Bleno.Characteristic {
           value: description
         })
       ]
-    })
-    this.uuid = uuid
-    this.description = description
-    this.value = Buffer.isBuffer(value) ? value : new Buffer.from(value)
+    });
+    this.uuid = uuid;
+    this.description = description;
+    this.value = Buffer.isBuffer(value) ? value : new Buffer.from(value);
   }
 }
 
-module.exports = StaticReadCharacteristic
+module.exports = StaticReadCharacteristic;

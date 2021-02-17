@@ -1,10 +1,17 @@
-var Bleno = require('bleno')
-const config = require('config-yml') // Use config for yaml config files in Node.js projects
-var DEBUG = config.DEBUG.BLE
+const Bleno = require('bleno');
+const config = require('config-yml');
+
+
+function log (msg) {
+  if (config.DEBUG.BLE) {
+    console.log(msg);
+  }
+}
+
 
 // Spec
 // Status op code
-var StatusOpCode = {
+const StatusOpCode = {
   reservedForFutureUse: 0x00,
   reset: 0x01,
   stoppedPausedUser: 0x02,
@@ -22,7 +29,7 @@ var StatusOpCode = {
   targetTrainingTimeChanged: 0x0e,
   indoorBikeSimulationParametersChanged: 0x12,
   wheelCircumferenceChanged: 0x13
-}
+};
 
 class FitnessMachineStatusCharacteristic extends Bleno.Characteristic {
   constructor () {
@@ -37,35 +44,35 @@ class FitnessMachineStatusCharacteristic extends Bleno.Characteristic {
           value: Buffer.alloc(2)
         })
       ]
-    })
-    this._updateValueCallback = null
+    });
+    this._updateValueCallback = null;
   }
 
   onSubscribe (maxValueSize, updateValueCallback) {
-    if (DEBUG) console.log('[fitness-machine-status-characteristic.js] - client subscribed')
-    this._updateValueCallback = updateValueCallback
-    return this.RESULT_SUCCESS
+    log('[fitness-machine-status-characteristic.js] - client subscribed');
+    this._updateValueCallback = updateValueCallbackM;
+    return this.RESULT_SUCCESS;
   }
 
   onUnsubscribe () {
-    if (DEBUG) console.log('[fitness-machine-status-characteristic.js] - client unsubscribed')
-    this._updateValueCallback = null
-    return this.RESULT_UNLIKELY_ERROR
+    log('[fitness-machine-status-characteristic.js] - client unsubscribed');
+    this._updateValueCallback = null;
+    return this.RESULT_UNLIKELY_ERROR;
   }
 
   notify (event) {
-    if (DEBUG) console.log('[fitness-machine-status-characteristic.js] - notify')
-    var buffer = new Buffer.from(2)
+    log('[fitness-machine-status-characteristic.js] - notify');
+    const buffer = new Buffer.from(2);
     // speed + power + heart rate
-    buffer.writeUInt8(StatusOpCode.startedResumedUser, 0)
+    buffer.writeUInt8(StatusOpCode.startedResumedUser, 0);
 
     if (this._updateValueCallback) {
-      this._updateValueCallback(buffer)
+      this._updateValueCallback(buffer);
     } else {
-      if (DEBUG) console.log('[fitness-machine-status-characteristic.js] - nobody is listening')
+      log('[fitness-machine-status-characteristic.js] - nobody is listening');
     }
-    return this.RESULT_SUCCESS
+    return this.RESULT_SUCCESS;
   }
 }
 
-module.exports = FitnessMachineStatusCharacteristic
+module.exports = FitnessMachineStatusCharacteristic;

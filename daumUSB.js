@@ -1,7 +1,7 @@
 const EventEmitter = require('events').EventEmitter;
 const com = require('serialport');
 const DaumSIM = require('./daumSIM');
-const config = require('config-yml');                   // Use config for yaml config files in Node.js projects
+const config = require('config-yml');
 
 const daumSIM = new DaumSIM();  // instantiation
 

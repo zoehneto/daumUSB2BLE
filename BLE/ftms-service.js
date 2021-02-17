@@ -1,15 +1,16 @@
+const Bleno = require('bleno');
+const FitnessControlPoint = require('./fitness-control-point-characteristic');
+const IndoorBikeDataCharacteristic = require('./indoor-bike-data-characteristic');
+const StaticReadCharacteristic = require('./static-read-characteristic');
+const FitnessMachineStatusCharacteristic = require('./fitness-machine-status-characteristic');
+
 // Doc: https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.fitness_machine.xml
-const Bleno = require('bleno')
-const FitnessControlPoint = require('./fitness-control-point-characteristic')
-const IndoorBikeDataCharacteristic = require('./indoor-bike-data-characteristic')
-const StaticReadCharacteristic = require('./static-read-characteristic')
-const FitnessMachineStatusCharacteristic = require('./fitness-machine-status-characteristic')
 
 class FitnessMachineService extends Bleno.PrimaryService {
   constructor (callback) {
-    let controlPoint = new FitnessControlPoint(callback)
-    let indoorBikeData = new IndoorBikeDataCharacteristic()
-    let fitnessMachineStatus = new FitnessMachineStatusCharacteristic()
+    let controlPoint = new FitnessControlPoint(callback);
+    let indoorBikeData = new IndoorBikeDataCharacteristic();
+    let fitnessMachineStatus = new FitnessMachineStatusCharacteristic();
 
     super({
       uuid: '1826',
@@ -39,17 +40,17 @@ class FitnessMachineService extends Bleno.PrimaryService {
         // go to: https://www.scadacore.com/tools/programming-calculators/online-hex-converter/
         // 19 00 20 03 05 00 - this should be the correct - INT16 - Little Endian (BA)
       ]
-    })
+    });
 
-    this.indoorBikeData = indoorBikeData
+    this.indoorBikeData = indoorBikeData;
   }
 
   /*
    * Transfer event from daum USB to the given characteristics
    */
   notify (event) {
-    this.indoorBikeData.notify(event)
+    this.indoorBikeData.notify(event);
   }
 }
 
-module.exports = FitnessMachineService
+module.exports = FitnessMachineService;

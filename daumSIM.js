@@ -12,7 +12,7 @@ function log (msg) {
 
 // ///////////////////////////////////////////////////////////////
 // usage: put daum in program 0 = watt mode and toggle ergoFACE to SIM mode.
-// in this setting, the gearshift buttons can be used to change gear = speedd
+// in this setting, the gearshift buttons can be used to change gear = speed
 // and daumSIM calculates the correct power for the received speed from RS232
 // ///////////////////////////////////////////////////////////////
 
