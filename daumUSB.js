@@ -112,17 +112,18 @@ function daumUSB () {
     // gotAdressSuccess check to avoid invalid values 0x11 = 17 at startup;
     // just check if stream is more than value, this is obsolete, because of custom parser that is parsing 40 bytes
     if (states.length >= 19 && gotAdressSuccess === true) {
+      let failure = false;
       // const cadence = (states[6 + index])
       // if (!isNaN(cadence) && (cadence >= config.daumRanges.min_rpm && cadence <= config.daumRanges.max_rpm)) {
       //   data.cadence = cadence
       // }
       // const hr = 99 // !!! can be deleted - have to check BLE code on dependencies
       // if (!isNaN(hr)) { data.hr = hr } // !!! can be deleted - have to check BLE code on dependencies
-
       const rpm = (states[6 + index]);
       if (!isNaN(rpm) && (rpm >= config.daumRanges.min_rpm && rpm <= config.daumRanges.max_rpm)) {
         if (rpm - global.globalrpm_daum >= config.daumRanges.rpm_threshold) {
-          log('[daumUSB.js] - rpm_threshold overflow - detected rpm: ', rpm.toString());
+          log('[daumUSB.js] - rpm_threshold overflow');
+          failure = true;
           data.rpm = global.globalrpm_daum;  // let's take the last known value
         } else {
           data.rpm = rpm;
@@ -156,8 +157,8 @@ function daumUSB () {
       } else {
         power = (states[5 + index]);
         if (!isNaN(power) && (power >= config.daumRanges.min_power && power <= config.daumRanges.max_power)) {
-          if (power >= config.daumRanges.power_threshold) {
-            log('[daumUSB.js] - power_threshold overflow - detected power: ', power.toString());
+          if (failure || power >= config.daumRanges.power_threshold) {
+            log('[daumUSB.js] - power_threshold overflow');
             data.power = global.globalpower_daum;  // let's take the last known value
           } else {
             // multiply with factor 5, see Daum spec
