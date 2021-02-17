@@ -140,4 +140,5 @@ daumRanges:
       min_power: 5      # 5 * 5 = 25 Watt
       max_power: 160    # 160 * 5 = 800 Watt
       power_factor: 5
+      rpm_threshold: 100
       power_threshold: 80

@@ -121,8 +121,13 @@ function daumUSB () {
 
       const rpm = (states[6 + index]);
       if (!isNaN(rpm) && (rpm >= config.daumRanges.min_rpm && rpm <= config.daumRanges.max_rpm)) {
-        data.rpm = rpm;
-        global.globalrpm_daum = data.rpm // global variables used, because I cannot code ;)
+        if (rpm - global.globalrpm_daum >= config.daumRanges.rpm_threshold) {
+          log('[daumUSB.js] - rpm_threshold overflow - detected rpm: ', rpm.toString());
+          data.rpm = global.globalrpm_daum;  // let's take the last known value
+        } else {
+          data.rpm = rpm;
+          global.globalrpm_daum = data.rpm // global variables used, because I cannot code ;)
+        }
       }
 
       let gear = (states[16 + index]);
@@ -152,8 +157,8 @@ function daumUSB () {
         power = (states[5 + index]);
         if (!isNaN(power) && (power >= config.daumRanges.min_power && power <= config.daumRanges.max_power)) {
           if (power >= config.daumRanges.power_threshold) {
-            log('[daumUSB.js] - power_threshold overflow - power: ', power.toString());
-            data.power = global.globalpower_daum;
+            log('[daumUSB.js] - power_threshold overflow - detected power: ', power.toString());
+            data.power = global.globalpower_daum;  // let's take the last known value
           } else {
             // multiply with factor 5, see Daum spec
             data.power = power * config.daumRanges.power_factor;
