@@ -281,10 +281,11 @@ function daumUSB () {
     self.setProgram(0);
     self.emitter.emit('key', '[daumUSB.js] - setProgram to 0');
 
-    // reset the gears to 0;
+    // reset the gears
     // this forces daum cockpit to change gears instead of power when using the buttons or the jog wheel
+    // TODO: This seems to override the gear/power switch sometimes
     self.setGear(config.daumRanges.min_gear);
-    self.emitter.emit('key', '[daumUSB.js] - setGear to 0')
+    self.emitter.emit('key', '[daumUSB.js] - setGear to minimum gear');
   };
 
   // stop port - no start function, use restart after stop

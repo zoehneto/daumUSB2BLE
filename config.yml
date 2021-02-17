@@ -15,7 +15,7 @@ globals:
     crr_ble: 0.0040
     cw_ble: 0.51
     mode: 'ERG'
-    switch: 'Power'
+    switch: 'Gear'
 
 server:
     port: 3000
