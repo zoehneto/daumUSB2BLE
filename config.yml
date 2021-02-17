@@ -13,8 +13,8 @@ globals:
     grade_ble: 0
     crr_ble: 0.0040
     cw_ble: 0.51
-    mode: 'SIM'
-    switch: 'Gear'
+    mode: 'ERG'
+    switch: 'Power'
 
 server:
     port: 3000

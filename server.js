@@ -233,6 +233,7 @@ function serverCallback (message, ...args) {
       daumUSB.restart();
       success = true;
       break;
+
     case 'control':
       // do nothing special
       log('[server.js] - Bike under control via BLE');
@@ -240,6 +241,7 @@ function serverCallback (message, ...args) {
       io.emit('control', 'BIKE CONTROLLED');
       success = true;
       break;
+
     case 'power':
       // ERG Mode - receive control point value via BLE from zwift or other app
       log('[server.js] - Bike ERG Mode');
@@ -253,6 +255,7 @@ function serverCallback (message, ...args) {
         success = true;
       }
       break;
+
     case 'simulation': 
       // SIM Mode - calculate power based on physics
       log('[server.js] - Bike in SIM Mode');

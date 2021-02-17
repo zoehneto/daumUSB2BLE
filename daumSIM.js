@@ -21,7 +21,7 @@ const maxGrade = 8;       // maximum gradient in %
 function daumSIM () {
   this.physics = function (windspeedz, gradez, crrz, cwz, rpmd, speedd, geard) {
     log('[daumSIM.js] - physics calculation started');
-    // io.emit('raw', 'Bike SIM Mode -physics calculation started')
+    // io.emit('raw', 'Bike SIM Mode - physics calculation started')
 
     //  Rider variables
     const mRider = config.simulation.mRider;        // mass in kg of the rider
