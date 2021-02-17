@@ -47,32 +47,44 @@ simulation:
     e: 0.97
 
 gears:
-    ratioLow: 1.36
-    ratioHigh: 0.16765
-    circumference: 211.5
+    circumference: 210
     speedConversion: 0.0006
 
 gearbox:
-    g1: 1.36
-    g2: 1.48
-    g3: 1.62
-    g4: 1.79
-    g5: 2.00
-    g6: 2.17
-    g7: 2.38
-    g8: 2.63
-    g9: 2.94
-    g10: 3.33
-    g11: 3.57
-    g12: 3.85
-    g13: 4.17
-    g14: 4.55
+    g1: 1.75
+    g2: 1.85
+    g3: 1.95
+    g4: 2.05
+    g5: 2.15
+    g6: 2.24
+    g7: 2.34
+    g8: 2.44
+    g9: 2.54
+    g10: 2.64
+    g11: 2.74
+    g12: 2.84
+    g13: 2.94
+    g14: 3.03
+    g15: 3.13
+    g16: 3.23
+    g17: 3.33
+    g18: 3.43
+    g19: 3.53
+    g20: 3.63
+    g21: 3.73
+    g22: 3.82
+    g23: 3.92
+    g24: 4.02
+    g25: 4.12
+    g26: 4.22
+    g27: 4.32
+    g28: 4.42
 
 gpio:
     geargpio: 1
     ratio: 1
     minGear: 1
-    maxGear: 14
+    maxGear: 28
     debounceTimeout: 10
     shiftUpPin: 4
     shiftDownPin: 17
@@ -124,6 +136,6 @@ daumRanges:
       max_gear: 28
       min_program: 0
       max_program: 79
-      min_power: 5
-      max_power: 160
+      min_power: 5      # 5 * 5 = 25 Watt
+      max_power: 160    # 160 * 5 = 800 Watt
       power_factor: 5

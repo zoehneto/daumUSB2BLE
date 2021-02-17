@@ -77,10 +77,12 @@ function daumUSB () {
           // clear pending array
           self.pending = [];
 
-          // adress is retrieved, lets set this to true to inform other functions that they can proceed now
+          // address is retrieved, lets set this to true to inform other functions that they can proceed now
           gotAdressSuccess = true;
 
-          // timeout is neccesarry to changes gears back to 1; there is an invalid value send, that sets gear 17 = 0x11, this should be filtered before data is read, but does not work
+          // timeout is neccesarry to changes gears back to 1;
+          // there is an invalid value send, that sets gear 17 = 0x11,
+          // this should be filtered before data is read, but does not work
           setTimeout(self.start, config.timeouts.start);
           log('[daumUSB.js] - getAdress - [gotAdressSuccess]: ', gotAdressSuccess);
 
@@ -90,8 +92,8 @@ function daumUSB () {
       }
     } else {
       for (let i = 0; i < (statesLen - 2); i++) {
-        // this loop is for parsing the datastream after gotAdressSuccess is true and we can use the adress for commands
-        // and search for the runData and daumCockpitAdress and manuall watt program prefix
+        // this loop is for parsing the datastream after gotAddressSuccess is true and we can use the address for commands
+        // and search for the runData and daumCockpitAdress and manual watt program prefix
         if (states[i].toString(16) === config.daumCommands.run_Data && states[i + 1].toString(16) === daumCockpitAdress && states[i + 2] === 0) {
           index = i;
           log('[daumUSB.js] - runData - [Index]: ', index);
@@ -101,13 +103,14 @@ function daumUSB () {
         }
 
         if (i === statesLen - 3) {
-          log('[daumUSB.js] - runData - [Index]: WRONG PROGRAM SET - SET MANUAL WATTPROGRAM 00')
-          self.emitter.emit('error', '[daumUSB.js] - runData - [Index]: WRONG PROGRAM SET - SET MANUAL WATTPROGRAM 00')
+          log('[daumUSB.js] - runData - [Index]: WRONG PROGRAM SET - SET MANUAL WATTPROGRAM 00');
+          self.emitter.emit('error', '[daumUSB.js] - runData - [Index]: WRONG PROGRAM SET - SET MANUAL WATTPROGRAM 00');
         }
       }
     }
 
-    // gotAdressSuccess check to avoid invalid values 0x11 = 17 at startup; just check if stream is more than value, this is obsulete, because of custom parser that is parsing 40 bytes
+    // gotAdressSuccess check to avoid invalid values 0x11 = 17 at startup;
+    // just check if stream is more than value, this is obsolete, because of custom parser that is parsing 40 bytes
     if (states.length >= 19 && gotAdressSuccess === true) {
       // const cadence = (states[6 + index])
       // if (!isNaN(cadence) && (cadence >= config.daumRanges.min_rpm && cadence <= config.daumRanges.max_rpm)) {
@@ -124,7 +127,7 @@ function daumUSB () {
 
       let gear = (states[16 + index]);
       if (!isNaN(gear) && (gear >= config.daumRanges.min_gear && gear <= config.daumRanges.max_gear)) {
-        // beacause Daum has by default 28 gears, check and overwrite if gpio maxGear is lower
+        // because Daum has by default 28 gears, check and overwrite if gpio maxGear is lower
         if (gear > config.gpio.maxGear) {
           // ceiling the maxGear with parameter
           gear = config.gpio.maxGear;
@@ -137,32 +140,29 @@ function daumUSB () {
 
       const program = (states[2 + index]);
       if (!isNaN(program) && (program >= config.daumRanges.min_program && program <= config.daumRanges.max_program)) {
-        data.program = program
+        data.program = program;
       }
 
       let power = 0;
-      // power - 25 watt will allways be transmitted by daum;
+      // power - 25 watt will always be transmitted by daum;
       // set to 0 if rpm is 0 to avoid rolling if stand still in applications like zwift or fullgaz
       if (rpm === 0) {
         data.power = power;
       } else {
         power = (states[5 + index]);
         if (!isNaN(power) && (power >= config.daumRanges.min_power && power <= config.daumRanges.max_power)) {
-          data.power = power * config.daumRanges.power_factor // multiply with factor 5, see Daum spec
+          // multiply with factor 5, see Daum spec
+          data.power = power * config.daumRanges.power_factor;
         }
       }
 
       // calculating the speed based on the RPM to gain some accuracy; speed signal is only integer
-      // as long as the gearRatio is the same as in the spec of DAUM, the actual speed on the display and the calculated one will be the same
-      // MICHAEL's: 34:25 & 50:11 20 speed;
-      // DAUM: the ratio starts from 42:24 and ends at 53:12; see TRS_8008 Manual page 57
+      // as long as the gearRatio is the same as in the spec of DAUM,
+      // the actual speed on the display and the calculated one will be the same
+      // DAUM: the ratio starts from 42:24 and ends at 53:12; see TRS_8008 Manual page 16
       // const gearRatio = config.gears.ratioLow + (data.gear - 1) * config.gears.ratioHigh
-
-      // MICHAEL's: 34:25 & 50:11 20 speed;
-      // DAUM: the ratio starts from 42:24 and ends at 53:12; see TRS_8008 Manual page 57
-      const gearRatio = config.gearbox['g' + data.gear];
-      const circumference = config.gears.circumference;                       // cirvumference in cm
-      const distance = gearRatio * circumference;                             // distance in cm per rotation
+      const gearRatio = config.gearbox['g' + data.gear];                      // 1,75 + ( gl_Gang -1 )* 0.098767
+      const distance = gearRatio * config.gears.circumference;                // distance in cm per rotation
       const speed = data.rpm * distance * config.gears.speedConversion;       // speed in km/h
       // const speed = (states[7 + index])
 
@@ -210,7 +210,7 @@ function daumUSB () {
           self.emitter.emit('key', '[daumUSB.js] - Ergobike found on port ' + p.comName);
 
           // custom parser set to byte length that is more than the actual response message of ergobike,
-          // but no other way possible right now thats why the index loops in 'readAndDispatch' are used to
+          // but no other way possible right now that's why the index loops in 'readAndDispatch' are used to
           // get the prefix of each command
           const port = new com.SerialPort(p.comName, {
             baudrate: config.port.baudrate,
@@ -224,7 +224,8 @@ function daumUSB () {
           port.open(function () {
             self.port = port;
             port.on('data', self.readAndDispatch);
-            // this is writing the data to the port; i've put here the timeout of DAUM interface spec; 50ms
+            // this is writing the data to the port;
+            // i've put here the timeout of DAUM interface spec; 50ms
             self.writer = setInterval(self.flushNext, config.intervals.flushNext);
 
             // check, otherwise after a restart via webserver, this will run again
@@ -323,7 +324,6 @@ function daumUSB () {
   };
 
   // get person data 1
-  // //////////////////////////////////////////////////////////////////////////
   this.getPersonData = function () {
     self.setDaumCommand(config.daumCommands.get_PersonData, daumCockpitAdress, 'none');
   };
@@ -335,7 +335,7 @@ function daumUSB () {
 
   // set the power resistance
   this.setPower = function (power) {
-    // power validation is done here to dont loose quality in other functions
+    // power validation is done here to don't loose quality in other functions
     if (power < config.daumRanges.min_power * config.daumRanges.power_factor) {
       // cut negative or too low power values from simulation
       power = config.daumRanges.min_power * config.daumRanges.power_factor;
@@ -370,4 +370,4 @@ function daumUSB () {
   }
 }
 
-module.exports = daumUSB; // export for use in other scripts, e.g.: server.js
+module.exports = daumUSB;

@@ -55,12 +55,12 @@ function daumSIM () {
     const cd = cwz;
 
     // DAUM values
-    const v = global.globalspeed_daum * 0.2778 // speed in m/s
+    const v = global.globalspeed_daum * 0.2778;     // speed in m/s
 
     //  Constants
-    const g = 9.8067;         // acceleration in m/s^2 due to gravity
-    const p = 1.225;          // air density in kg/m^3 at 15°C at sea level
-    const e = 0.97;           // drive chain efficiency
+    const g = 9.8067;                               // acceleration in m/s^2 due to gravity
+    const p = 1.225;                                // air density in kg/m^3 at 15°C at sea level
+    const e = 0.97;                                 // drive chain efficiency
     // const vw = Math.abs(v + w); // have to do this to avoid NaN in Math.pow()
 
     // Cycling Wattage Calculator - https://www.omnicalculator.com/sports/cycling-wattage

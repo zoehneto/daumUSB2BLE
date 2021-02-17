@@ -19,23 +19,19 @@ function log (msg) {
   }
 }
 
-// ////////////////////////////////////////////////////////////////////////
-// used global variables, because I cannot code ;)
-// ////////////////////////////////////////////////////////////////////////
-global.globalspeed_daum = 0;
-global.globalrpm_daum = 0;
-global.globalgear_daum = 1;
-global.globalsimpower_daum = 0;
-global.globalwindspeed_ble = 0;
-global.globalgrade_ble = 0;
-global.globalcrr_ble = 0.0040;      // set once to have simulation available without BLE connected to apps
-global.globalcw_ble = 0.51;         // set once to have simulation available without BLE connected to apps
-global.globalmode = 'SIM';          // set this as default start mode here; in this mode ,ergoFACE is going to startup
-global.globalswitch = 'Gear';       // set this as default start mode here; in this mode ,ergoFACE is going to startup
+// init global variables
+global.globalspeed_daum = config.globals.speed_daum;
+global.globalrpm_daum = config.globals.rpm_daum;
+global.globalgear_daum = config.globals.gear_daum;
+global.globalsimpower_daum = config.globals.simpower_daum;
+global.globalwindspeed_ble = config.globals.windspeed_ble;
+global.globalgrade_ble = config.globals.grade_ble;
+global.globalcrr_ble = config.globals.crr_ble;    // set once to have simulation available without BLE connected to apps
+global.globalcw_ble = config.globals.cw_ble;      // set once to have simulation available without BLE connected to apps
+global.globalmode = config.globals.mode;          // set this as default start mode here; in this mode ,ergoFACE is going to startup
+global.globalswitch = config.globals.switch;      // set this as default start mode here; in this mode ,ergoFACE is going to startup
 
-// /////////////////////////////////////////////////////////////////////////
 // server path specifications
-// /////////////////////////////////////////////////////////////////////////
 app.use('/public/css', express.static(path.join(__dirname, 'public/css')));
 app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use('/lib', express.static(path.join(__dirname, 'lib')));
@@ -45,17 +41,13 @@ app.get('/', function (req, res) {
   res.render('index')
 });
 
-// /////////////////////////////////////////////////////////////////////////
-// server start listening to port 3000
-// /////////////////////////////////////////////////////////////////////////
-server.listen(process.env.PORT || 3000, function () {
+// start server listening on specified port
+server.listen(process.env.PORT || config.server.port, function () {
   // for getting IP dynamicaly in index.ejs and not to enter it manually
   log('[server.js] - listening on port 3000!');
 });
 
-// /////////////////////////////////////////////////////////////////////////
-// instantiation
-// /////////////////////////////////////////////////////////////////////////
+// instantiation of necessary modules
 const daumUSB = new DaumUSB();
 const daumSIM = new DaumSIM();
 const daumBLE = new DaumBLE(serverCallback);
@@ -120,10 +112,10 @@ io.on('connection', socket => {
 // /////////////////////////////////////////////////////////////////////////
 // shifting gears or power via gpio + hardware switches
 // /////////////////////////////////////////////////////////////////////////
-let geargpio = 1;                            // initialize to start from first gear
-const ratio = 1;                             // set ratio, to shift multiple gears with the press of a button.
-const minGear = 1;                           // lowest gear
-const maxGear = 28;                          // highest gear
+let geargpio = config.gpio.geargpio;         // initialize to start from first gear
+const ratio = config.globals.ratio;          // set ratio, to shift multiple gears with the press of a button.
+const minGear = config.globals.minGear;      // lowest gear
+const maxGear = config.globals.maxGear;      // highest gear
 
 shiftUp.watch((err, value) => {
   if (err) {
@@ -151,34 +143,36 @@ shiftUp.watch((err, value) => {
 });
 
 process.on('SIGINT', () => {
-  shiftUp.unexport()
+  shiftUp.unexport();
 });
 
 shiftDown.watch((err, value) => {
   if (err) {
-    io.emit('error', '[server.js] - gpio shift down: ' + err)
-    throw err
+    io.emit('error', '[server.js] - gpio shift down: ' + err);
+    throw err;
   }
   if (value) {
-    if (global.globalswitch === 'Power') { // if mode is set to 'power', we decrement watt
-      daumUSB.setWattProfile(1) // decrement power
-      
+    if (global.globalswitch === 'Power') {
+      // if mode is set to 'power', we decrement watt
+      daumUSB.setWattProfile(1);           // decrement power
+
       log('[server.js] - decrement Power');
       io.emit('raw', '[server.js] - decrement Power')
-    } else { // if mode is set to 'gear', we degrement gears
+    } else {
+      // if mode is set to 'gear', we decrement gears
       if (geargpio > minGear) {
         geargpio = geargpio - ratio; // shift n gears at a time, to avoid too much shifting
         daumUSB.setGear(geargpio);
         
         log('[server.js] - Shift to Gear: ' + geargpio);
-        io.emit('raw', '[server.js] - Shift to Gear: ' + geargpio)
+        io.emit('raw', '[server.js] - Shift to Gear: ' + geargpio);
       }
     }
   }
 });
 
 process.on('SIGINT', () => {
-  shiftDown.unexport()
+  shiftDown.unexport();
 });
 
 // /////////////////////////////////////////////////////////////////////////
@@ -205,7 +199,7 @@ daumObs.on('key', string => {
 });
 
 daumObs.on('raw', string => {
-  log('[server.js] - raw: ', string);
+  log('[server.js] - raw: ', string.toString('hex'));
   io.emit('raw', string.toString('hex'));
   
   // emit version number to webserver
@@ -227,7 +221,7 @@ daumObs.on('data', data => {
 });
 
 // /////////////////////////////////////////////////////////////////////////
-/* BLE callback section */
+// BLE callback section
 // /////////////////////////////////////////////////////////////////////////
 function serverCallback (message, ...args) {
   let success = false;
