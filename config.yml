@@ -1,13 +1,14 @@
 DEBUG:
     daumUSB: true
     server: true
-    daumSIM: true
-    BLE: true
+    daumSIM: false
+    BLE: false
 
 globals:
     speed_daum: 0
     rpm_daum: 0
     gear_daum: 1
+    power_daum: 0
     simpower_daum: 0
     windspeed_ble: 0
     grade_ble: 0
@@ -139,3 +140,4 @@ daumRanges:
       min_power: 5      # 5 * 5 = 25 Watt
       max_power: 160    # 160 * 5 = 800 Watt
       power_factor: 5
+      power_threshold: 80

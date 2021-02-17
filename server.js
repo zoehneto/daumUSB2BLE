@@ -23,6 +23,7 @@ function log (msg) {
 global.globalspeed_daum = config.globals.speed_daum;
 global.globalrpm_daum = config.globals.rpm_daum;
 global.globalgear_daum = config.globals.gear_daum;
+global.globalpower_daum = config.globals.power_daum;
 global.globalsimpower_daum = config.globals.simpower_daum;
 global.globalwindspeed_ble = config.globals.windspeed_ble;
 global.globalgrade_ble = config.globals.grade_ble;

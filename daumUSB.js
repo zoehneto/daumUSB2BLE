@@ -34,7 +34,7 @@ function daumUSB () {
   // send (flush) pending messages to port (sequencial)
   this.flushNext = function () {
     if (self.pending.length === 0) {
-      log('[daumUSB.js] - this.flushNext - nothing pending');
+      // log('[daumUSB.js] - this.flushNext - nothing pending');
       return
     }
     const string = self.pending.shift();
@@ -96,7 +96,7 @@ function daumUSB () {
         // and search for the runData and daumCockpitAdress and manual watt program prefix
         if (states[i].toString(16) === config.daumCommands.run_Data && states[i + 1].toString(16) === daumCockpitAdress && states[i + 2] === 0) {
           index = i;
-          log('[daumUSB.js] - runData - [Index]: ', index);
+          log('[daumUSB.js] - runData - [Index]: ', index.toString());
 
           // stop if prefix found and break
           break;
@@ -151,8 +151,14 @@ function daumUSB () {
       } else {
         power = (states[5 + index]);
         if (!isNaN(power) && (power >= config.daumRanges.min_power && power <= config.daumRanges.max_power)) {
-          // multiply with factor 5, see Daum spec
-          data.power = power * config.daumRanges.power_factor;
+          if (power >= config.daumRanges.power_threshold) {
+            log('[daumUSB.js] - power_threshold overflow - power: ', power.toString());
+            data.power = global.globalpower_daum;
+          } else {
+            // multiply with factor 5, see Daum spec
+            data.power = power * config.daumRanges.power_factor;
+            global.globalpower_daum = data.power;
+          }
         }
       }
 
