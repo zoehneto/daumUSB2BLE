@@ -133,15 +133,19 @@ function daumUSB () {
 
       let gear = (states[16 + index]);
       if (!isNaN(gear) && (gear >= config.daumRanges.min_gear && gear <= config.daumRanges.max_gear)) {
-        // because Daum has by default 28 gears, check and overwrite if gpio maxGear is lower
-        if (gear > config.gpio.maxGear) {
-          // ceiling the maxGear with parameter
-          gear = config.gpio.maxGear;
-          // overwrite gear to Daum
-          self.setGear(gear);
+        if (failure) {
+          data.gear = global.globalgear_daum;
+        } else {
+          // because Daum has by default 28 gears, check and overwrite if gpio maxGear is lower
+          if (gear > config.gpio.maxGear) {
+            // ceiling the maxGear with parameter
+            gear = config.gpio.maxGear;
+            // overwrite gear to Daum
+            self.setGear(gear);
+          }
+          data.gear = gear;
+          global.globalgear_daum = data.gear; // global variables used, because I cannot code ;)
         }
-        data.gear = gear;
-        global.globalgear_daum = data.gear; // global variables used, because I cannot code ;)
       }
 
       const program = (states[2 + index]);
