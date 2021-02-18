@@ -87,6 +87,7 @@ io.on('connection', socket => {
 
   socket.on('setGear', function (data) { 
     // via webserver - set gears - !!!this is in conflict with gpio gear changing, because no read of gears when using gpios
+    // NOTE: by changing the gear here, the cockpit switches to gear mode (jog wheel switches only gears from that time)
     log('[server.js] - set Gear');
     const gear = data;
     daumUSB.setGear(gear);

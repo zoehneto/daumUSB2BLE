@@ -283,7 +283,6 @@ function daumUSB () {
 
     // reset the gears
     // this forces daum cockpit to change gears instead of power when using the buttons or the jog wheel
-    // TODO: This seems to override the gear/power switch sometimes
     self.setGear(config.daumRanges.min_gear);
     self.emitter.emit('key', '[daumUSB.js] - setGear to minimum gear');
   };
