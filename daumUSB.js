@@ -19,6 +19,7 @@ function daumUSB () {
   self.reader = null;                                   // used for 'runData' command
   self.readeradress = null;                             // used for 'getAdress' command
   self.emitter = new EventEmitter();
+  self.failures = 0;
 
   // this script is looking for the address, this is working, for default, I'll set this to 00
   let daumCockpitAdress = config.daumCockpit.adress;
@@ -109,6 +110,7 @@ function daumUSB () {
 
     // gotAdressSuccess check to avoid invalid values 0x11 = 17 at startup;
     if (!failure && gotAdressSuccess === true) {
+      self.failures = 0;
       // const cadence = (states[6 + index])
       // if (!isNaN(cadence) && (cadence >= config.daumRanges.min_rpm && cadence <= config.daumRanges.max_rpm)) {
       //   data.cadence = cadence
@@ -196,7 +198,13 @@ function daumUSB () {
       }
     } else {
       // is obsolete, because of custom parser that parses 40 bytes - but just in case to have some error handling
-      self.unknownHandler(numbers);
+      self.failures++;
+      if (self.failures >= 10) {
+        // too much failures in a row, trying to restart
+        self.restart();
+      } else {
+        self.unknownHandler(numbers);
+      }
     }
   };
 
