@@ -148,7 +148,7 @@ function daumUSB () {
       }
 
       const program = (states[2 + index]);
-      if (!isNaN(program) && (program >= config.daumRanges.min_program && program <= config.daumRanges.max_program)) {
+      if (!failure && !isNaN(program) && (program >= config.daumRanges.min_program && program <= config.daumRanges.max_program)) {
         data.program = program;
       }
 

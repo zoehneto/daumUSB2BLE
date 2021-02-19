@@ -1,5 +1,5 @@
 DEBUG:
-    daumUSB: true
+    daumUSB: false
     server: true
     daumSIM: true
     BLE: false
