@@ -201,6 +201,7 @@ function daumUSB () {
       self.failures++;
       if (self.failures >= 10) {
         // too much failures in a row, trying to restart
+        gotAdressSuccess = false;
         self.restart();
       } else {
         self.unknownHandler(numbers);
