@@ -288,6 +288,7 @@ function daumUSB () {
   // restart port
   this.restart = function () {
     log('[daumUSB.js] - Daum restart');
+    self.failures = 0;
     if (self.port.isOpen) {
       self.stop();
       self.port.close();
