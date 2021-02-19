@@ -49,17 +49,18 @@ function daumUSB () {
 
   // used when port open to get data stream from buffer and grab the values, e.g. speed, rpm,...
   this.readAndDispatch = function (numbers) {
-    log('[daumUSB.js] - readAndDispatch - [IN]: ' + numbers.toString('hex'));
+    log('[daumUSB.js] - readAndDispatch - [IN]: ' + numbers.toString(16));
     self.emitter.emit('raw', numbers);
     const states = numbers;
     const statesLen = states.length;
     const data = {};
     let index = 0;
+    let failure = true;
 
     if (gotAdressSuccess === false) {
       // this loop is for parsing the cockpit address
       for (let i = 0; i < statesLen; i++) {
-        log('[daumUSB.js] - getAdress - [Index]: ' + i + ' - ' + states[i].toString('hex'));
+        log('[daumUSB.js] - getAdress - [Index]: ' + i + ' - ' + states[i].toString(16));
 
         // search for getAdress prefix
         if (states[i].toString(16) === config.daumCommands.get_Adress) {
@@ -94,25 +95,20 @@ function daumUSB () {
       for (let i = 0; i < (statesLen - 2); i++) {
         // this loop is for parsing the datastream after gotAddressSuccess is true and we can use the address for commands
         // and search for the runData and daumCockpitAdress and manual watt program prefix
-        if (states[i].toString(16) === config.daumCommands.run_Data && states[i + 1].toString(16) === daumCockpitAdress && states[i + 2] === 0) {
+        // TODO: check for more than the first run_Data element. if we have more, it could cause a problem
+        if (self.checkRunData(states, i)) {
+          failure = false;
           index = i;
           log('[daumUSB.js] - runData - [Index]: ' + index.toString());
 
           // stop if prefix found and break
           break;
         }
-
-        if (i === statesLen - 3) {
-          log('[daumUSB.js] - runData - [Index]: WRONG PROGRAM SET - SET MANUAL WATTPROGRAM 00');
-          self.emitter.emit('error', '[daumUSB.js] - runData - [Index]: WRONG PROGRAM SET - SET MANUAL WATTPROGRAM 00');
-        }
       }
     }
 
     // gotAdressSuccess check to avoid invalid values 0x11 = 17 at startup;
-    // just check if stream is more than value, this is obsolete, because of custom parser that is parsing 40 bytes
-    if (states.length >= 19 && gotAdressSuccess === true) {
-      let failure = false;
+    if (!failure && gotAdressSuccess === true) {
       // const cadence = (states[6 + index])
       // if (!isNaN(cadence) && (cadence >= config.daumRanges.min_rpm && cadence <= config.daumRanges.max_rpm)) {
       //   data.cadence = cadence
@@ -204,10 +200,26 @@ function daumUSB () {
     }
   };
 
+  this.checkRunData = function (states, i) {
+    return (i + 16 <= config.port.parserLength &&                             // All necessary data should be available
+      states[i].toString(16) === config.daumCommands.run_Data &&              // 1. Byte: Run_Daten
+      states[i + 1].toString(16) === daumCockpitAdress &&                     // 2. Byte: Cockpit-Address
+      states[i + 2].toString(16) === config.daumRanges.manual_program &&      // 3. Byte: Valid Program (here: manual)
+      states[i + 3].toString(16) <= config.daumRanges.max_Person &&           // 4. Byte: Valid Person
+      states[i + 5].toString(16) >= config.daumRanges.min_power &&            // 6. Byte: Valid Power Range
+      states[i + 5].toString(16) <= config.daumRanges.max_power &&
+      states[i + 6].toString(16) >= config.daumRanges.min_rpm &&              // 7. Byte: Valid RPM
+      states[i + 6].toString(16) <= config.daumRanges.max_rpm &&
+      states[i + 7].toString(16) >= config.daumRanges.min_speed &&            // 8. Byte: Valid Speed Range
+      states[i + 7].toString(16) <= config.daumRanges.max_speed &&
+      states[i + 16].toString(16) >= config.daumRanges.min_gear &&            // 17. Byte: Valid Gear Range
+      states[i + 16].toString(16) >= config.daumRanges.max_gear);
+  };
+
   // unknown handlers start
   this.unknownHandler = function (numbers) {
-    log('[daumUSB.js] - unknownHandler - Unrecognized packet: ' + numbers);
-    self.emitter.emit('error', '[daumUSB.js] - unknownHandler: ' + numbers);
+    log('[daumUSB.js] - unknownHandler - Unrecognized packet: ' + numbers.toString(16));
+    self.emitter.emit('error', '[daumUSB.js] - unknownHandler: ' + numbers.toString(16));
   };
 
   // open port as specified by daum
@@ -220,7 +232,7 @@ function daumUSB () {
       ports.forEach(function (p) {
         // ??? don't know if this is the ID of ergobike, or the serial adapter, this has to be configured for every bike, so I might skip it
         if (p.vendorId && p.productId) {
-          log('[daumUSB.js] - open:' + p.vendorId + '  ' + p.productId); // RS232 converter Ids
+          log('[daumUSB.js] - open: ' + p.vendorId + '  ' + p.productId); // RS232 converter Ids
           log('[daumUSB.js] - open - Ergobike found on port ' + p.comName);
           self.emitter.emit('key', '[daumUSB.js] - Ergobike found on port ' + p.comName);
 
@@ -239,6 +251,7 @@ function daumUSB () {
           port.open(function () {
             self.port = port;
             port.on('data', self.readAndDispatch);
+
             // this is writing the data to the port;
             // i've put here the timeout of DAUM interface spec; 50ms
             self.writer = setInterval(self.flushNext, config.intervals.flushNext);
@@ -247,13 +260,15 @@ function daumUSB () {
             if (gotAdressSuccess === false) {
               log('[daumUSB.js] - looking for cockpit adress');
               self.emitter.emit('key', '[daumUSB.js] - looking for cockpit adress');
-              // continiously get adress from ergobike, the interval is canceled if gotAdressSuccess is true
+
+              // continuously get adress from ergobike, the interval is canceled if gotAdressSuccess is true
               self.readeradress = setInterval(self.getAdress, config.intervals.getAdress);
             }
 
             log('[daumUSB.js] - runData');
             self.emitter.emit('key', '[daumUSB.js] - runData');
-            // continiously get 'run_Data' from ergobike; 500ms means, every 1000ms a buffer
+
+            // continuously get 'run_Data' from ergobike; 500ms means, every 1000ms a buffer
             self.reader = setInterval(self.runData, config.intervals.runData);
           })
         }
