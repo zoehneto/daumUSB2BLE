@@ -49,7 +49,7 @@ function daumUSB () {
 
   // used when port open to get data stream from buffer and grab the values, e.g. speed, rpm,...
   this.readAndDispatch = function (numbers) {
-    log('[daumUSB.js] - readAndDispatch - [IN]: ' + numbers.toString(16));
+    log('[daumUSB.js] - readAndDispatch - [IN]: ' + numbers.toString('hex'));
     self.emitter.emit('raw', numbers);
     const states = numbers;
     const statesLen = states.length;
@@ -218,8 +218,8 @@ function daumUSB () {
 
   // unknown handlers start
   this.unknownHandler = function (numbers) {
-    log('[daumUSB.js] - unknownHandler - Unrecognized packet: ' + numbers.toString(16));
-    self.emitter.emit('error', '[daumUSB.js] - unknownHandler: ' + numbers.toString(16));
+    log('[daumUSB.js] - unknownHandler - Unrecognized packet: ' + numbers.toString('hex'));
+    self.emitter.emit('error', '[daumUSB.js] - unknownHandler: ' + numbers.toString('hex'));
   };
 
   // open port as specified by daum
