@@ -100,10 +100,10 @@ io.on('connection', socket => {
     io.emit('key', '[server.js] - set Program ID: ' + programID);
   });
 
-  socket.on('setGear', function (data) { 
+  socket.on('shiftGear', function (data) {
     // via webserver - set gears - !!!this is in conflict with gpio gear changing, because no read of gears when using gpios
     // NOTE: by changing the gear here, the cockpit switches to gear mode (jog wheel switches only gears from that time)
-    log('[server.js] - set Gear');
+    log('[server.js] - shift Gear');
     let gear = global.globalgear_daum;
 
     switch (data) {
@@ -126,8 +126,8 @@ io.on('connection', socket => {
     io.emit('raw', '[server.js] - set Gear: ' + gear);
   });
 
-  socket.on('setPower', function (data) {
-    log('[server.js] - set Power');
+  socket.on('shiftPower', function (data) {
+    log('[server.js] - shift Power');
     let power = global.globalpower_daum;
 
     switch (data) {
@@ -148,6 +148,15 @@ io.on('connection', socket => {
     }
     daumUSB.setPower(power);
     io.emit('raw', '[server.js] - set Power: ' + power);
+  });
+
+  socket.on('setGear', function (data) {
+    // via webserver - set gears - !!!this is in conflict with gpio gear changing, because no read of gears when using gpios
+    // NOTE: by changing the gear here, the cockpit switches to gear mode (jog wheel switches only gears from that time)
+    log('[server.js] - set Gear');
+    const gear = data;
+    daumUSB.setGear(gear);
+    io.emit('raw', '[server.js] - set Gear: ' + gear);
   });
 
   socket.on('mode', function (data) { 

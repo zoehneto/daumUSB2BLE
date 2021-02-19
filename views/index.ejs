@@ -221,14 +221,21 @@
         $('button.btn.gear').click(function() {
           const id = $(this).attr('id');
           const idd = id.replace('gear_', '');
-          socket.emit('setGear', idd);
+          socket.emit('shiftGear', idd);
           return false;
         });
 
         $('button.btn.power').click(function() {
           const id = $(this).attr('id');
           const idd = id.replace('power_', '');
-          socket.emit('setPower', idd);
+          socket.emit('shiftPower', idd);
+          return false;
+        });
+
+        $('a.dropdown-item.gear').click(function() {
+          const id = $(this).attr('id');
+          const idd = id.replace('gear_', '');
+          socket.emit('setGear', idd);
           return false;
         });
       });
@@ -246,6 +253,19 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNavDropdown">
               <ul class="navbar-nav">
+                <li class="nav-item dropdown active">
+                  <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    set Gear
+                  </a>
+                  <div class="dropdown-menu" aria-labelledby="dropdownMenuGear">
+                    <a class="dropdown-item gear" id="gear_01" href="#">01</a>
+                    <a class="dropdown-item gear" id="gear_05" href="#">05</a>
+                    <a class="dropdown-item gear" id="gear_0a" href="#">10</a>
+                    <a class="dropdown-item gear" id="gear_0f" href="#">15</a>
+                    <a class="dropdown-item gear" id="gear_14" href="#">20</a>
+                    <a class="dropdown-item gear" id="gear_19" href="#">25</a>
+                  </div>
+                </li>
                 <li class="nav-item dropdown active">
                   <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     set Program
