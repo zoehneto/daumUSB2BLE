@@ -266,7 +266,7 @@ daumObs.on('key', string => {
 });
 
 daumObs.on('raw', string => {
-  log('[server.js] - raw: ', string.toString('hex'));
+  log('[server.js] - raw: ' + string.toString('hex'));
   io.emit('raw', string.toString('hex'));
   
   // emit version number to webserver
