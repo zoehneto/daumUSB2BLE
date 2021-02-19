@@ -28,7 +28,7 @@ function daumUSB () {
   // push data in queue before flushNext is writing it to port
   this.write = function (string) {
     self.pending.push(string);
-    log('[daumUSB.js] - this.write - [OUT]: ', string);
+    log('[daumUSB.js] - this.write - [OUT]: ' + string);
   };
 
   // send (flush) pending messages to port (sequencial)
@@ -40,7 +40,7 @@ function daumUSB () {
     const string = self.pending.shift();
     if (self.port) {
       const buffer = new Buffer.from(string);
-      log('[daumUSB.js] - flushNext - [OUT]: ', buffer);
+      log('[daumUSB.js] - flushNext - [OUT]: ' + buffer);
       self.port.write(buffer);
     } else {
       log('[daumUSB.js] - flushNext - Communication port is not open - not sending data: ' + string);
@@ -49,7 +49,7 @@ function daumUSB () {
 
   // used when port open to get data stream from buffer and grab the values, e.g. speed, rpm,...
   this.readAndDispatch = function (numbers) {
-    log('[daumUSB.js] - readAndDispatch - [IN]: ', numbers);
+    log('[daumUSB.js] - readAndDispatch - [IN]: ' + numbers);
     self.emitter.emit('raw', numbers);
     const states = numbers;
     const statesLen = states.length;
@@ -59,16 +59,16 @@ function daumUSB () {
     if (gotAdressSuccess === false) {
       // this loop is for parsing the cockpit address
       for (let i = 0; i < statesLen; i++) {
-        log('[daumUSB.js] - getAdress - [Index]: ', i, ' ', states[i]);
+        log('[daumUSB.js] - getAdress - [Index]: ' + i + ' ' + states[i]);
 
         // search for getAdress prefix
         if (states[i].toString(16) === config.daumCommands.get_Adress) {
           index = i;
-          log('[daumUSB.js] - getAdress - [Index]: ', index);
+          log('[daumUSB.js] - getAdress - [Index]: ' + index);
 
-          // get the adress from the stream by using the index
+          // get the address from the stream by using the index
           daumCockpitAdress = (states[1 + index]).toString();
-          log('[daumUSB.js] - getAdress - [Adress]: ', daumCockpitAdress);
+          log('[daumUSB.js] - getAdress - [Adress]: ' + daumCockpitAdress);
           self.emitter.emit('key', '[daumUSB.js] - getAdress - [Adress]: ' + daumCockpitAdress);
 
           // stop looking for adress
@@ -84,7 +84,7 @@ function daumUSB () {
           // there is an invalid value send, that sets gear 17 = 0x11,
           // this should be filtered before data is read, but does not work
           setTimeout(self.start, config.timeouts.start);
-          log('[daumUSB.js] - getAdress - [gotAdressSuccess]: ', gotAdressSuccess);
+          log('[daumUSB.js] - getAdress - [gotAdressSuccess]: ' + gotAdressSuccess);
 
           // stop if prefix found and break
           break;
@@ -96,7 +96,7 @@ function daumUSB () {
         // and search for the runData and daumCockpitAdress and manual watt program prefix
         if (states[i].toString(16) === config.daumCommands.run_Data && states[i + 1].toString(16) === daumCockpitAdress && states[i + 2] === 0) {
           index = i;
-          log('[daumUSB.js] - runData - [Index]: ', index.toString());
+          log('[daumUSB.js] - runData - [Index]: ' + index.toString());
 
           // stop if prefix found and break
           break;
@@ -206,7 +206,7 @@ function daumUSB () {
 
   // unknown handlers start
   this.unknownHandler = function (numbers) {
-    log('[daumUSB.js] - unknownHandler - Unrecognized packet: ', numbers);
+    log('[daumUSB.js] - unknownHandler - Unrecognized packet: ' + numbers);
     self.emitter.emit('error', '[daumUSB.js] - unknownHandler: ' + numbers);
   };
 
