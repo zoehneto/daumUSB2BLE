@@ -53,8 +53,7 @@ function daumUSB () {
     self.emitter.emit('raw', numbers);
     const states = numbers;
     const statesLen = states.length;
-    // let's initialize the new data object with the last known values
-    const data = {rpm: global.globalrpm_daum, gear: global.globalgear_daum, power: global.globalpower_daum, speed: global.globalspeed_daum};
+    const data = {};
     let index = 0;
 
     if (gotAdressSuccess === false) {
@@ -133,7 +132,9 @@ function daumUSB () {
 
       let gear = (states[16 + index]);
       if (!isNaN(gear) && (gear >= config.daumRanges.min_gear && gear <= config.daumRanges.max_gear)) {
-        if (!failure) {
+        if (failure) {
+          data.gear = global.globalgear_daum;
+        } else {
           // because Daum has by default 28 gears, check and overwrite if gpio maxGear is lower
           if (gear > config.gpio.maxGear) {
             // ceiling the maxGear with parameter
@@ -161,6 +162,7 @@ function daumUSB () {
         if (!isNaN(power) && (power >= config.daumRanges.min_power && power <= config.daumRanges.max_power)) {
           if (failure || power >= config.daumRanges.power_threshold) {
             log('[daumUSB.js] - power_threshold overflow');
+            data.power = global.globalpower_daum;  // let's take the last known value
           } else {
             // multiply with factor 5, see Daum spec
             data.power = power * config.daumRanges.power_factor;
