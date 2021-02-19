@@ -25,7 +25,7 @@ function daumUSB () {
   // false by default to scan for cockpit address; if address cannot be retrieved, there will be no interaction with daum.
   let gotAdressSuccess = config.daumCockpit.gotAdressSuccess;
 
-  // push data in queue befor flushNext is writing it to port
+  // push data in queue before flushNext is writing it to port
   this.write = function (string) {
     self.pending.push(string);
     log('[daumUSB.js] - this.write - [OUT]: ', string);
@@ -35,7 +35,7 @@ function daumUSB () {
   this.flushNext = function () {
     if (self.pending.length === 0) {
       // log('[daumUSB.js] - this.flushNext - nothing pending');
-      return
+      return;
     }
     const string = self.pending.shift();
     if (self.port) {
@@ -53,7 +53,8 @@ function daumUSB () {
     self.emitter.emit('raw', numbers);
     const states = numbers;
     const statesLen = states.length;
-    const data = {};
+    // let's initialize the new data object with the last known values
+    const data = {rpm: global.globalrpm_daum, gear: global.globalgear_daum, power: global.globalpower_daum, speed: global.globalspeed_daum};
     let index = 0;
 
     if (gotAdressSuccess === false) {
@@ -124,7 +125,6 @@ function daumUSB () {
         if (rpm - global.globalrpm_daum >= config.daumRanges.rpm_threshold) {
           log('[daumUSB.js] - rpm_threshold overflow');
           failure = true;
-          data.rpm = global.globalrpm_daum;  // let's take the last known value
         } else {
           data.rpm = rpm;
           global.globalrpm_daum = data.rpm // global variables used, because I cannot code ;)
@@ -133,9 +133,7 @@ function daumUSB () {
 
       let gear = (states[16 + index]);
       if (!isNaN(gear) && (gear >= config.daumRanges.min_gear && gear <= config.daumRanges.max_gear)) {
-        if (failure) {
-          data.gear = global.globalgear_daum;
-        } else {
+        if (!failure) {
           // because Daum has by default 28 gears, check and overwrite if gpio maxGear is lower
           if (gear > config.gpio.maxGear) {
             // ceiling the maxGear with parameter
@@ -163,7 +161,6 @@ function daumUSB () {
         if (!isNaN(power) && (power >= config.daumRanges.min_power && power <= config.daumRanges.max_power)) {
           if (failure || power >= config.daumRanges.power_threshold) {
             log('[daumUSB.js] - power_threshold overflow');
-            data.power = global.globalpower_daum;  // let's take the last known value
           } else {
             // multiply with factor 5, see Daum spec
             data.power = power * config.daumRanges.power_factor;
@@ -313,11 +310,11 @@ function daumUSB () {
         log('[daumUSB.js] - set command [0x' + command + ']: ' + sendData);
 
         if (sendData === 'none') {
-          // this is for commands that just have command and adress - no data
+          // this is for commands that just have command and address - no data
           const datas = Buffer.from(command + ('00' + (adress).toString()).slice(-2), 'hex');
           self.write(datas);
         } else {
-          // this is for commands that have command, adress and data
+          // this is for commands that have command, address and data
           const datas = Buffer.from(command + ('00' + (adress).toString()).slice(-2) + ('00' + (sendData).toString(16)).slice(-2), 'hex');
           self.write(datas);
         }

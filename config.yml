@@ -1,7 +1,11 @@
 DEBUG:
     daumUSB: true
     server: true
-    daumSIM: false
+    daumSIM: true
+    BLE: false
+
+mock:
+    daumUSB: false
     BLE: false
 
 globals:
@@ -82,6 +86,7 @@ gearbox:
     g28: 4.42
 
 gpio:
+    enabled: false
     geargpio: 1
     ratio: 1
     minGear: 1
@@ -135,6 +140,7 @@ daumRanges:
       max_rpm: 199
       min_gear: 1
       max_gear: 28
+      max_shift: 5
       min_program: 0
       max_program: 79
       min_power: 5      # 5 * 5 = 25 Watt

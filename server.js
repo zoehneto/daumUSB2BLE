@@ -4,15 +4,24 @@ const app = require('express')();
 const server = require('http').createServer(app);                         // for getting IP dynamicaly in index.ejs
 const io = require('socket.io')(server);                                  // for getting IP dynamicaly in index.ejs
 const path = require('path');
-const config = require('config-yml');
-const DaumUSB = require('./daumUSB');
-const DaumSIM = require('./daumSIM');
-const DaumBLE = require('./BLE/daumBLE');
-const Gpio = require('onoff').Gpio;
-const shiftUp = new Gpio(4, 'in', 'rising', { debounceTimeout: 10 });     // hardware switch for shifting up gears
-const shiftDown = new Gpio(17, 'in', 'rising', { debounceTimeout: 10 });  // hardware switch for shifting down gears
 const { version } = require('./package.json');                            // get version number from package.json
 
+const config = require('config-yml');
+
+const DaumUSB = config.mock.daumUSB ? require('./mock/daumUSB') : require('./daumUSB');
+const DaumSIM = require('./daumSIM');
+const DaumBLE = config.mock.BLE ? require('./mock/daumBLE') : require('./BLE/daumBLE');
+
+// instantiate hardware switch for shifting up/down gears
+const Gpio = require('onoff').Gpio;
+const shiftUp = config.gpio.enabled ?
+  new Gpio(4, 'in', 'rising', { debounceTimeout: 10 }) :
+  {watch: () => {}, unexport: () => {}};
+const shiftDown = config.gpio.enabled ?
+  new Gpio(17, 'in', 'rising', { debounceTimeout: 10 }) :
+  {watch: () => {}, unexport: () => {}};
+
+// TODO: move logging into separate logger class
 function log (msg) {
   if (config.DEBUG.server) {
     console.log(msg);
@@ -54,6 +63,12 @@ const daumSIM = new DaumSIM();
 const daumBLE = new DaumBLE(serverCallback);
 const daumObs = daumUSB.open();
 
+process.on('SIGINT', () => {
+  log('[server.js] - detected SIGINT: initiate shutdown...');
+  daumUSB.stop();
+  server.close();
+});
+
 // /////////////////////////////////////////////////////////////////////////
 // Web server callback, listen for actions taken at the server GUI, not from Daum or BLE
 // /////////////////////////////////////////////////////////////////////////
@@ -89,9 +104,50 @@ io.on('connection', socket => {
     // via webserver - set gears - !!!this is in conflict with gpio gear changing, because no read of gears when using gpios
     // NOTE: by changing the gear here, the cockpit switches to gear mode (jog wheel switches only gears from that time)
     log('[server.js] - set Gear');
-    const gear = data;
+    let gear = global.globalgear_daum;
+
+    switch (data) {
+      case 'minus_minus':
+        gear = gear - config.daumRanges.max_shift >= config.daumRanges.min_gear ? gear - config.daumRanges.max_shift : config.daumRanges.min_gear;
+        break;
+      case 'minus':
+        gear = gear - 1 >= config.daumRanges.min_gear ? gear - 1 : config.daumRanges.min_gear;
+        break;
+      case 'plus_plus':
+        gear = gear + config.daumRanges.max_shift <= config.daumRanges.max_gear ? gear + config.daumRanges.max_shift : config.daumRanges.max_gear;
+        break;
+      case 'plus':
+        gear = gear + 1 <= config.daumRanges.max_gear ? gear + 1 : config.daumRanges.max_gear;
+        break;
+      default:
+        log('[server.js] - set Gear can not be processed (setting last known gear)');
+    }
     daumUSB.setGear(gear);
     io.emit('raw', '[server.js] - set Gear: ' + gear);
+  });
+
+  socket.on('setPower', function (data) {
+    log('[server.js] - set Power');
+    let power = global.globalpower_daum;
+
+    switch (data) {
+      case 'minus_minus':
+        power = power - config.daumRanges.max_shift * config.daumRanges.power_factor;
+        break;
+      case 'minus':
+        power = power - config.daumRanges.power_factor;
+        break;
+      case 'plus_plus':
+        power = power + config.daumRanges.max_shift * config.daumRanges.power_factor;
+        break;
+      case 'plus':
+        power = power + config.daumRanges.power_factor;
+        break;
+      default:
+        log('[server.js] - set Gear can not be processed (setting last known power)');
+    }
+    daumUSB.setPower(power);
+    io.emit('raw', '[server.js] - set Power: ' + power);
   });
 
   socket.on('mode', function (data) { 
