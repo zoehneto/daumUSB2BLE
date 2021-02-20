@@ -1,7 +1,8 @@
 const EventEmitter = require('events').EventEmitter;
-const com = require('serialport');
+const SerialPort = require('serialport');
 const DaumSIM = require('./daumSIM');
 const config = require('config-yml');
+const InterByteTimeout = require('@serialport/parser-inter-byte-timeout');
 
 const daumSIM = new DaumSIM();  // instantiation
 
@@ -14,10 +15,7 @@ function log (msg) {
 function daumUSB () {
   const self = this;
   self.port = null;
-  self.pending = [];                                    // buffer for pushing pending commands to the port
-  self.writer = null;                                   // used for flushing next pending data
-  self.reader = null;                                   // used for 'runData' command
-  self.readeradress = null;                             // used for 'getAdress' command
+  self.parser = null;
   self.emitter = new EventEmitter();
   self.failures = 0;
 
@@ -26,25 +24,14 @@ function daumUSB () {
   // false by default to scan for cockpit address; if address cannot be retrieved, there will be no interaction with daum.
   let gotAdressSuccess = config.daumCockpit.gotAdressSuccess;
 
-  // push data in queue before flushNext is writing it to port
+  // write data to port
   this.write = function (string) {
-    self.pending.push(string);
-    // log('[daumUSB.js] - this.write - [OUT]: ' + string);
-  };
-
-  // send (flush) pending messages to port (sequencial)
-  this.flushNext = function () {
-    if (self.pending.length === 0) {
-      // log('[daumUSB.js] - this.flushNext - nothing pending');
-      return;
-    }
-    const string = self.pending.shift();
+    log('[daumUSB.js] - this.write - [OUT]: ' + string.toString('hex'));
     if (self.port) {
       const buffer = new Buffer.from(string);
-      // log('[daumUSB.js] - flushNext - [OUT]: ' + buffer);
       self.port.write(buffer);
     } else {
-      log('[daumUSB.js] - flushNext - Communication port is not open - not sending data: ' + string);
+      log('[daumUSB.js] - this.write - Communication port is not open - not sending data: ' + string);
     }
   };
 
@@ -56,7 +43,7 @@ function daumUSB () {
     const statesLen = states.length;
     const data = {};
     let index = 0;
-    let failure = true;
+    let failure = false;
 
     if (gotAdressSuccess === false) {
       // this loop is for parsing the cockpit address
@@ -73,12 +60,6 @@ function daumUSB () {
           log('[daumUSB.js] - getAdress - [Adress]: ' + daumCockpitAdress);
           self.emitter.emit('key', '[daumUSB.js] - getAdress - [Adress]: ' + daumCockpitAdress);
 
-          // stop looking for adress
-          clearInterval(self.readeradress);
-
-          // clear pending array
-          self.pending = [];
-
           // address is retrieved, lets set this to true to inform other functions that they can proceed now
           gotAdressSuccess = true;
 
@@ -91,25 +72,16 @@ function daumUSB () {
           // stop if prefix found and break
           break;
         }
-      }
-    } else {
-      for (let i = 0; i < (statesLen - 2); i++) {
-        // this loop is for parsing the datastream after gotAddressSuccess is true and we can use the address for commands
-        // and search for the runData and daumCockpitAdress and manual watt program prefix
-        // TODO: check for more than the first run_Data element. if we have more, it could cause a problem
-        if (self.checkRunData(states, i)) {
-          failure = false;
-          index = i;
-          log('[daumUSB.js] - runData - [Index]: ' + index.toString());
 
-          // stop if prefix found and break
-          break;
+        if(i === statesLen - 1) {
+          log('[daumUSB.js] - no address found. retrying command to get address...');
+          setTimeout(() => self.getAdress(), config.intervals.getAdress);
         }
       }
     }
 
     // gotAdressSuccess check to avoid invalid values 0x11 = 17 at startup;
-    if (!failure && gotAdressSuccess === true) {
+    if (self.checkRunData(states) && gotAdressSuccess === true) {
       self.failures = 0;
       // const cadence = (states[6 + index])
       // if (!isNaN(cadence) && (cadence >= config.daumRanges.min_rpm && cadence <= config.daumRanges.max_rpm)) {
@@ -196,6 +168,8 @@ function daumUSB () {
       if (Object.keys(data).length > 0) {
         self.emitter.emit('data', data);
       }
+
+      setTimeout(() => self.runData(), config.intervals.runData);
     } else {
       // is obsolete, because of custom parser that parses 40 bytes - but just in case to have some error handling
       self.failures++;
@@ -204,96 +178,120 @@ function daumUSB () {
         gotAdressSuccess = false;
         self.restart();
       } else {
-        self.unknownHandler(numbers);
+        log('[daumUSB.js] - Unrecognized packet: ' + numbers.toString('hex'));
+        self.emitter.emit('error', '[daumUSB.js] - Unrecognized packet: ' + numbers.toString('hex'));
+
+        log('[daumUSB.js] - no run data found. retrying command to get run data...');
+        setTimeout(() => self.runData(), config.intervals.runData);
       }
     }
   };
 
-  this.checkRunData = function (states, i) {
-    return (i + 16 <= config.port.parserLength &&                             // All necessary data should be available
-      states[i].toString(16) === config.daumCommands.run_Data &&              // 1. Byte: Run_Daten
-      states[i + 1].toString(16) === daumCockpitAdress &&                     // 2. Byte: Cockpit-Address
-      states[i + 2].toString(16) === config.daumRanges.manual_program &&      // 3. Byte: Valid Program (here: manual)
-      states[i + 3].toString(16) <= config.daumRanges.max_Person &&           // 4. Byte: Valid Person
-      states[i + 5].toString(16) >= config.daumRanges.min_power &&            // 6. Byte: Valid Power Range
-      states[i + 5].toString(16) <= config.daumRanges.max_power &&
-      states[i + 6].toString(16) >= config.daumRanges.min_rpm &&              // 7. Byte: Valid RPM
-      states[i + 6].toString(16) <= config.daumRanges.max_rpm &&
-      states[i + 7].toString(16) >= config.daumRanges.min_speed &&            // 8. Byte: Valid Speed Range
-      states[i + 7].toString(16) <= config.daumRanges.max_speed &&
-      states[i + 16].toString(16) >= config.daumRanges.min_gear &&            // 17. Byte: Valid Gear Range
-      states[i + 16].toString(16) >= config.daumRanges.max_gear);
-  };
+  this.checkRunData = function (states) {
+    const i = 0;
 
-  // unknown handlers start
-  this.unknownHandler = function (numbers) {
-    log('[daumUSB.js] - unknownHandler - Unrecognized packet: ' + numbers.toString('hex'));
-    self.emitter.emit('error', '[daumUSB.js] - unknownHandler: ' + numbers.toString('hex'));
+    return (parseHexToInt(states[i]) === parseInt(config.daumCommands.run_Data) &&  // 1. Byte: Run_Daten
+      parseHexToInt(states[i + 1]) === parseInt(daumCockpitAdress) &&           // 2. Byte: Cockpit-Address
+      parseHexToInt(states[i + 2]) === config.daumRanges.manual_program &&      // 3. Byte: Valid Program (here: manual)
+      parseHexToInt(states[i + 3]) <= config.daumRanges.max_Person &&           // 4. Byte: Valid Person
+      parseHexToInt(states[i + 5]) >= config.daumRanges.min_power &&            // 6. Byte: Valid Power Range
+      parseHexToInt(states[i + 5]) <= config.daumRanges.max_power &&
+      parseHexToInt(states[i + 6]) >= config.daumRanges.min_rpm &&              // 7. Byte: Valid RPM
+      parseHexToInt(states[i + 6]) <= config.daumRanges.max_rpm &&
+      parseHexToInt(states[i + 7]) >= config.daumRanges.min_speed &&            // 8. Byte: Valid Speed Range
+      parseHexToInt(states[i + 7]) <= config.daumRanges.max_speed &&
+      parseHexToInt(states[i + 16]) >= config.daumRanges.min_gear &&            // 17. Byte: Valid Gear Range
+      parseHexToInt(states[i + 16]) <= config.daumRanges.max_gear);
   };
 
   // open port as specified by daum
   this.open = function () {
-    com.list(function (err, ports) {
-      if (err) {
+    if (config.mock.daumUSB) {
+      self.openPort('/dev/ROBOT', 'MOCK_VENDOR', 'MOCK_PRODUCT');
+    } else {
+      SerialPort.list().then((ports) => {
+        ports.forEach(function (p) {
+          // ??? don't know if this is the ID of ergobike, or the serial adapter,
+          // this has to be configured for every bike, so I might skip it
+          if (p.vendorId && p.productId) {
+            self.openPort(p.path, p.vendorId, p.productId);
+          }
+        })
+      }, (err) => {
         self.emitter.emit('error', '[daumUSB.js] - open: ' + err);
         throw err;
-      }
-      ports.forEach(function (p) {
-        // ??? don't know if this is the ID of ergobike, or the serial adapter, this has to be configured for every bike, so I might skip it
-        if (p.vendorId && p.productId) {
-          log('[daumUSB.js] - open: ' + p.vendorId + '  ' + p.productId); // RS232 converter Ids
-          log('[daumUSB.js] - open - Ergobike found on port ' + p.comName);
-          self.emitter.emit('key', '[daumUSB.js] - Ergobike found on port ' + p.comName);
+      });
+    }
 
-          // custom parser set to byte length that is more than the actual response message of ergobike,
-          // but no other way possible right now that's why the index loops in 'readAndDispatch' are used to
-          // get the prefix of each command
-          const port = new com.SerialPort(p.comName, {
-            baudrate: config.port.baudrate,
-            dataBits: config.port.dataBits,
-            parity: config.port.parity,
-            stopBits: config.port.stopBits,
-            flowControl: config.port.flowControl,
-            parser: com.parsers.byteLength(config.port.parserLength)
-          }, false);
-
-          port.open(function () {
-            self.port = port;
-            port.on('data', self.readAndDispatch);
-
-            // this is writing the data to the port;
-            // i've put here the timeout of DAUM interface spec; 50ms
-            self.writer = setInterval(self.flushNext, config.intervals.flushNext);
-
-            // check, otherwise after a restart via webserver, this will run again
-            if (gotAdressSuccess === false) {
-              log('[daumUSB.js] - looking for cockpit adress');
-              self.emitter.emit('key', '[daumUSB.js] - looking for cockpit adress');
-
-              // continuously get adress from ergobike, the interval is canceled if gotAdressSuccess is true
-              self.readeradress = setInterval(self.getAdress, config.intervals.getAdress);
-            }
-
-            log('[daumUSB.js] - runData');
-            self.emitter.emit('key', '[daumUSB.js] - runData');
-
-            // continuously get 'run_Data' from ergobike; 500ms means, every 1000ms a buffer
-            self.reader = setInterval(self.runData, config.intervals.runData);
-          })
-        }
-      })
-    });
     return self.emitter;
+  };
+
+  this.openPort = (path, vendorId, productId) => {
+    log('[daumUSB.js] - open - ' + vendorId + '  ' + productId); // RS232 converter Ids
+    log('[daumUSB.js] - open - Ergobike found on port ' + path);
+    self.emitter.emit('key', '[daumUSB.js] - Ergobike found on port ' + path);
+
+    if (config.mock.daumUSB) {
+      const MockBinding = require('@serialport/binding-mock');
+      SerialPort.Binding = MockBinding;
+
+      // Create a port and enable the echo and recording.
+      MockBinding.createPort(path, {echo: true, record: true});
+    }
+
+    self.port = new SerialPort(path, {
+      autoOpen: false,
+      baudRate: config.port.baudrate,
+      dataBits: config.port.dataBits,
+      parity: config.port.parity,
+      stopBits: config.port.stopBits,
+      rtscts: config.port.flowControl,
+    });
+
+    self.parser = self.port.pipe(new InterByteTimeout({interval: config.port.interval}));
+
+    // try open
+    self.internalOpen();
+
+    self.port.on('open', () => {
+      log('[daumUSB.js] - the serialport has been opened!')
+      self.parser.on('data', self.readAndDispatch);
+
+      if (gotAdressSuccess === false) {
+        // check, otherwise after a restart via webserver, this will run again
+        log('[daumUSB.js] - looking for cockpit address');
+        self.emitter.emit('key', '[daumUSB.js] - looking for cockpit address');
+
+        // get address from ergobike
+        if (config.mock.daumUSB) {
+          gotAdressSuccess = true;
+        } else {
+          self.getAdress();
+        }
+      }
+    });
+
+    self.port.on('close', () => {
+      log('[daumUSB.js] - the serialport has been closed!')
+    });
+  };
+
+  this.internalOpen = () => {
+    self.port.open((err) => {
+      if (!err) {
+        return;
+      }
+      console.log('[daumUSB.js] - port is not open, retry in 10s');
+      setTimeout(() => this.internalOpen(), config.intervals.openPort);
+    });
   };
 
   // restart port
   this.restart = function () {
     log('[daumUSB.js] - Daum restart');
     self.failures = 0;
-    if (self.port.isOpen) {
-      self.stop();
-      self.port.close();
-    }
+
+    self.stop();
     setTimeout(self.open, config.timeouts.open);
     setTimeout(self.start, config.timeouts.start);
   };
@@ -313,20 +311,8 @@ function daumUSB () {
 
   // stop port - no start function, use restart after stop
   this.stop = function () {
-    // overwrite pending array - like flush
-    self.pending = [];
-    if (self.writer) {
-      // stop writing to port
-      clearInterval(self.writer);
-    }
-    if (self.reader) {
-      // stop reading 'run_data' from port
-      clearInterval(self.reader);
-    }
-    if (self.readeradress) {
-      // stop reading address from port
-      // this is canceled as soon as gotAddressSuccess is true, but in case stop happens before this event.
-      clearInterval(self.readeradress);
+    if(self.port.isOpen) {
+      self.port.close();
     }
   };
 
@@ -347,13 +333,13 @@ function daumUSB () {
         }
 
       } else {
-        // if no cockpit adress found, just post the message and not execute the command
-        log('[daumUSB.js] - cannot set command [0x' + command + '] - no cockpit adress');
-        self.emitter.emit('error', '[daumUSB.js] - cannot set command [0x' + command + '] - no cockpit adress');
+        // if no cockpit address found, just post the message and not execute the command
+        log('[daumUSB.js] - cannot set command [0x' + command + '] - no cockpit address');
+        self.emitter.emit('error', '[daumUSB.js] - cannot set command [0x' + command + '] - no cockpit address');
       }
     } else {
       // this is just for get address
-      datas = Buffer.from(command, 'hex');
+      const datas = Buffer.from(command, 'hex');
       self.write(datas);
     }
   };
@@ -370,7 +356,12 @@ function daumUSB () {
 
   // get 'run_Data' from ergobike
   this.runData = function () {
-    self.setDaumCommand(config.daumCommands.run_Data, daumCockpitAdress, 'none');
+    log('[daumUSB.js] - runData');
+    self.emitter.emit('key', '[daumUSB.js] - runData');
+
+    self.setDaumCommand(config.mock.daumUSB ?
+      mockRunData() :
+      config.daumCommands.run_Data, daumCockpitAdress, 'none');
   };
 
   // set the power resistance
@@ -406,8 +397,19 @@ function daumUSB () {
   };
   // to string ????????? - self.toString is not used here
   this.toString = function () {
-    return 'Daum on ' + self.port.comName;
+    return 'Daum on ' + self.port.path;
   }
+}
+
+function parseHexToInt(hex) {
+  return parseInt(hex.toString(16), 16);
+}
+
+function mockRunData () {
+  const temp = 70 + Math.floor(Math.random() * 5);
+  const rpm = temp.toString(16);
+
+  return new Buffer.from('280000000019' + rpm + '1D0000000000000000040000');
 }
 
 module.exports = daumUSB;

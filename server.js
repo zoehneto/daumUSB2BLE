@@ -8,7 +8,7 @@ const { version } = require('./package.json');                            // get
 
 const config = require('config-yml');
 
-const DaumUSB = config.mock.daumUSB ? require('./mock/daumUSB') : require('./daumUSB');
+const DaumUSB = require('./daumUSB');
 const DaumSIM = require('./daumSIM');
 const DaumBLE = config.mock.BLE ? require('./mock/daumBLE') : require('./BLE/daumBLE');
 
