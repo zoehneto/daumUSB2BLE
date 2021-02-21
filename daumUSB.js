@@ -260,8 +260,9 @@ function daumUSB () {
     self.internalOpen();
 
     self.port.on('open', () => {
-      log('[daumUSB.js] - the serialport has been opened!')
+      log('[daumUSB.js] - the serialport has been opened!');
       self.parser.on('data', self.readAndDispatch);
+      self.port.drain();
 
       if (gotAdressSuccess === false) {
         // check, otherwise after a restart via webserver, this will run again
