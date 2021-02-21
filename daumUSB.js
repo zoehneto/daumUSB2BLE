@@ -35,164 +35,164 @@ function daumUSB () {
     }
   };
 
+  this.getResponseHeader = (data) => {
+    let address = data[1].toString(16);
+    if (address.length === 1) {
+      address = '0' + address;
+    }
+      return data[0].toString(16) + address;  // 1. Byte: Command; 2. Byte: Cockpit-Address
+  };
+
   // used when port open to get data stream from buffer and grab the values, e.g. speed, rpm,...
   this.readAndDispatch = function (numbers) {
     log('[daumUSB.js] - readAndDispatch - [IN]: ' + numbers.toString('hex'));
     self.emitter.emit('raw', numbers);
-    const states = numbers;
-    const statesLen = states.length;
+    let states = numbers;
     const data = {};
-    let index = 0;
     let failure = false;
 
+    if (config.mock.daumUSB) {
+      gotAdressSuccess = true;
+    }
     if (gotAdressSuccess === false) {
-      // this loop is for parsing the cockpit address
-      for (let i = 0; i < statesLen; i++) {
-        log('[daumUSB.js] - getAdress - [Index]: ' + i + ' - ' + states[i].toString(16));
+      if (self.checkAdressResponse(numbers)) {
+        // get the address from the stream by using the index
+        daumCockpitAdress = (states[1]).toString();
+        log('[daumUSB.js] - getAdress - [Adress]: ' + daumCockpitAdress);
+        self.emitter.emit('key', '[daumUSB.js] - getAdress - [Adress]: ' + daumCockpitAdress);
 
-        // search for getAdress prefix
-        if (states[i].toString(16) === config.daumCommands.get_Adress) {
-          index = i;
-          log('[daumUSB.js] - getAdress - [Index]: ' + index);
+        // address is retrieved, lets set this to true to inform other functions that they can proceed now
+        gotAdressSuccess = true;
 
-          // get the address from the stream by using the index
-          daumCockpitAdress = (states[1 + index]).toString();
-          log('[daumUSB.js] - getAdress - [Adress]: ' + daumCockpitAdress);
-          self.emitter.emit('key', '[daumUSB.js] - getAdress - [Adress]: ' + daumCockpitAdress);
+        // timeout is necesarry to changes gears back to 1;
+        // there is an invalid value send, that sets gear 17 = 0x11,
+        // this should be filtered before data is read, but does not work
+        setTimeout(self.start, config.timeouts.start);
+        log('[daumUSB.js] - getAdress - [gotAdressSuccess]: ' + gotAdressSuccess);
 
-          // address is retrieved, lets set this to true to inform other functions that they can proceed now
-          gotAdressSuccess = true;
-
-          // timeout is neccesarry to changes gears back to 1;
-          // there is an invalid value send, that sets gear 17 = 0x11,
-          // this should be filtered before data is read, but does not work
-          setTimeout(self.start, config.timeouts.start);
-          log('[daumUSB.js] - getAdress - [gotAdressSuccess]: ' + gotAdressSuccess);
-
-          // stop if prefix found and break
-          break;
-        }
-
-        if(i === statesLen - 1) {
-          log('[daumUSB.js] - no address found. retrying command to get address...');
-          setTimeout(() => self.getAdress(), config.intervals.getAdress);
-        }
-      }
-    }
-
-    // gotAdressSuccess check to avoid invalid values 0x11 = 17 at startup;
-    if (self.checkRunData(states) && gotAdressSuccess === true) {
-      self.failures = 0;
-      // const cadence = (states[6 + index])
-      // if (!isNaN(cadence) && (cadence >= config.daumRanges.min_rpm && cadence <= config.daumRanges.max_rpm)) {
-      //   data.cadence = cadence
-      // }
-      // const hr = 99 // !!! can be deleted - have to check BLE code on dependencies
-      // if (!isNaN(hr)) { data.hr = hr } // !!! can be deleted - have to check BLE code on dependencies
-      const rpm = (states[6 + index]);
-      if (!isNaN(rpm) && (rpm >= config.daumRanges.min_rpm && rpm <= config.daumRanges.max_rpm)) {
-        if (rpm - global.globalrpm_daum >= config.daumRanges.rpm_threshold) {
-          log('[daumUSB.js] - rpm_threshold overflow');
-          failure = true;
-        } else {
-          data.rpm = rpm;
-          global.globalrpm_daum = data.rpm // global variables used, because I cannot code ;)
-        }
-      }
-
-      let gear = (states[16 + index]);
-      if (!isNaN(gear) && (gear >= config.daumRanges.min_gear && gear <= config.daumRanges.max_gear)) {
-        if (failure) {
-          data.gear = global.globalgear_daum;
-        } else {
-          // because Daum has by default 28 gears, check and overwrite if gpio maxGear is lower
-          if (gear > config.gpio.maxGear) {
-            // ceiling the maxGear with parameter
-            gear = config.gpio.maxGear;
-            // overwrite gear to Daum
-            self.setGear(gear);
-          }
-          data.gear = gear;
-          global.globalgear_daum = data.gear; // global variables used, because I cannot code ;)
-        }
-      }
-
-      const program = (states[2 + index]);
-      if (!failure && !isNaN(program) && (program >= config.daumRanges.min_program && program <= config.daumRanges.max_program)) {
-        data.program = program;
-      }
-
-      let power = 0;
-      // power - 25 watt will always be transmitted by daum;
-      // set to 0 if rpm is 0 to avoid rolling if stand still in applications like zwift or fullgaz
-      if (rpm === 0) {
-        data.power = power;
       } else {
-        power = (states[5 + index]);
-        if (!isNaN(power) && (power >= config.daumRanges.min_power && power <= config.daumRanges.max_power)) {
-          if (failure || power >= config.daumRanges.power_threshold) {
-            log('[daumUSB.js] - power_threshold overflow');
-            data.power = global.globalpower_daum;  // let's take the last known value
-          } else {
-            // multiply with factor 5, see Daum spec
-            data.power = power * config.daumRanges.power_factor;
-            global.globalpower_daum = data.power;
-          }
-        }
+        log('[daumUSB.js] - no address found. retrying command to get address...');
+        setTimeout(() => self.getAdress(), config.intervals.getAdress);
       }
-
-      // calculating the speed based on the RPM to gain some accuracy; speed signal is only integer
-      // as long as the gearRatio is the same as in the spec of DAUM,
-      // the actual speed on the display and the calculated one will be the same
-      // DAUM: the ratio starts from 42:24 and ends at 53:12; see TRS_8008 Manual page 16
-      // const gearRatio = config.gears.ratioLow + (data.gear - 1) * config.gears.ratioHigh
-      const gearRatio = config.gearbox['g' + data.gear];                      // 1,75 + ( gl_Gang -1 )* 0.098767
-      const distance = gearRatio * config.gears.circumference;                // distance in cm per rotation
-      const speed = data.rpm * distance * config.gears.speedConversion;       // speed in km/h
-      // const speed = (states[7 + index])
-
-      if (!isNaN(speed) && (speed >= config.daumRanges.min_speed && speed <= config.daumRanges.max_speed)) {
-        // reduce number of decimals after calculation to 1
-        data.speed = Number(speed).toFixed(1);
-        global.globalspeed_daum = data.speed; // global variables used, because I cannot code ;)
-
-        // run power simulation here in parallel to server.js to enhance resolution of resistance,
-        // e.g.: ble only triggers sim once per second, but if you pedal faster, this needs to be here.
-        if (global.globalmode === 'SIM') {
-          daumSIM.physics(global.globalwindspeed_ble, global.globalgrade_ble, global.globalcrr_ble, global.globalcw_ble, global.globalrpm_daum, global.globalspeed_daum, global.globalgear_daum);
-          self.setPower(Number(global.globalsimpower_daum).toFixed(0));
-        }
-      }
-
-      // emit data for further use
-      if (Object.keys(data).length > 0) {
-        self.emitter.emit('data', data);
-      }
-
-      setTimeout(() => self.runData(), config.intervals.runData);
     } else {
-      // is obsolete, because of custom parser that parses 40 bytes - but just in case to have some error handling
-      self.failures++;
-      if (self.failures >= 10) {
-        // too much failures in a row, trying to restart
-        gotAdressSuccess = false;
-        self.restart();
-      } else {
-        log('[daumUSB.js] - Unrecognized packet: ' + numbers.toString('hex'));
-        self.emitter.emit('error', '[daumUSB.js] - Unrecognized packet: ' + numbers.toString('hex'));
+      // Check first two bytes to assign response data to previously sent command
+      switch(self.getResponseHeader(numbers)) {
+        case config.daumCommands.check_Cockpit + daumCockpitAdress:
+          log('[daumUSB.js] - check cockpit');
+          break;
 
-        log('[daumUSB.js] - no run data found. retrying command to get run data...');
-        setTimeout(() => self.runData(), config.intervals.runData);
+        case config.daumCommands.run_Data + daumCockpitAdress:
+          if (self.checkRunData(states)) {
+            // const cadence = (states[6])
+            // if (!isNaN(cadence) && (cadence >= config.daumRanges.min_rpm && cadence <= config.daumRanges.max_rpm)) {
+            //   data.cadence = cadence
+            // }
+            // const hr = 99 // !!! can be deleted - have to check BLE code on dependencies
+            // if (!isNaN(hr)) { data.hr = hr } // !!! can be deleted - have to check BLE code on dependencies
+            const rpm = (states[6]);
+            if (!isNaN(rpm) && (rpm >= config.daumRanges.min_rpm && rpm <= config.daumRanges.max_rpm)) {
+              if (rpm - global.globalrpm_daum >= config.daumRanges.rpm_threshold) {
+                log('[daumUSB.js] - rpm_threshold overflow');
+                failure = true;
+              } else {
+                data.rpm = rpm;
+                global.globalrpm_daum = data.rpm // global variables used, because I cannot code ;)
+              }
+            }
+
+            let gear = (states[16]);
+            if (!isNaN(gear) && (gear >= config.daumRanges.min_gear && gear <= config.daumRanges.max_gear)) {
+              if (failure) {
+                data.gear = global.globalgear_daum;
+              } else {
+                // because Daum has by default 28 gears, check and overwrite if gpio maxGear is lower
+                if (gear > config.gpio.maxGear) {
+                  // ceiling the maxGear with parameter
+                  gear = config.gpio.maxGear;
+                  // overwrite gear to Daum
+                  self.setGear(gear);
+                }
+                data.gear = gear;
+                global.globalgear_daum = data.gear; // global variables used, because I cannot code ;)
+              }
+            }
+
+            const program = (states[2]);
+            if (!failure && !isNaN(program) && (program >= config.daumRanges.min_program && program <= config.daumRanges.max_program)) {
+              data.program = program;
+            }
+
+            let power = 0;
+            // power - 25 watt will always be transmitted by daum;
+            // set to 0 if rpm is 0 to avoid rolling if stand still in applications like zwift or fullgaz
+            if (rpm === 0) {
+              data.power = power;
+            } else {
+              power = (states[5]);
+              if (!isNaN(power) && (power >= config.daumRanges.min_power && power <= config.daumRanges.max_power)) {
+                if (failure || power >= config.daumRanges.power_threshold) {
+                  log('[daumUSB.js] - power_threshold overflow');
+                  data.power = global.globalpower_daum;  // let's take the last known value
+                } else {
+                  // multiply with factor 5, see Daum spec
+                  data.power = power * config.daumRanges.power_factor;
+                  global.globalpower_daum = data.power;
+                }
+              }
+            }
+
+            // calculating the speed based on the RPM to gain some accuracy; speed signal is only integer
+            // as long as the gearRatio is the same as in the spec of DAUM,
+            // the actual speed on the display and the calculated one will be the same
+            // DAUM: the ratio starts from 42:24 and ends at 53:12; see TRS_8008 Manual page 16
+            // const gearRatio = config.gears.ratioLow + (data.gear - 1) * config.gears.ratioHigh
+            const gearRatio = config.gearbox['g' + data.gear];                      // 1,75 + ( gl_Gang -1 )* 0.098767
+            const distance = gearRatio * config.gears.circumference;                // distance in cm per rotation
+            const speed = data.rpm * distance * config.gears.speedConversion;       // speed in km/h
+            // const speed = (states[7])
+
+            if (!isNaN(speed) && (speed >= config.daumRanges.min_speed && speed <= config.daumRanges.max_speed)) {
+              // reduce number of decimals after calculation to 1
+              data.speed = Number(speed).toFixed(1);
+              global.globalspeed_daum = data.speed; // global variables used, because I cannot code ;)
+
+              // run power simulation here in parallel to server.js to enhance resolution of resistance,
+              // e.g.: ble only triggers sim once per second, but if you pedal faster, this needs to be here.
+              if (global.globalmode === 'SIM') {
+                daumSIM.physics(global.globalwindspeed_ble, global.globalgrade_ble, global.globalcrr_ble, global.globalcw_ble, global.globalrpm_daum, global.globalspeed_daum, global.globalgear_daum);
+                self.setPower(Number(global.globalsimpower_daum).toFixed(0));
+              }
+            }
+
+            // emit data for further use
+            if (Object.keys(data).length > 0) {
+              self.emitter.emit('data', data);
+            }
+
+            setTimeout(() => self.runData(), config.intervals.runData);
+          }
+          break;
+
+        default:
+          self.failures++;
+          log('[daumUSB.js] - Unrecognized packet: ' + numbers.toString('hex'));
+          self.emitter.emit('error', '[daumUSB.js] - Unrecognized packet: ' + numbers.toString('hex'));
+          log('[daumUSB.js] - Failures: ' + self.failures);
+
+          log('[daumUSB.js] - no valid response found. retrying command to get run data...');
+          setTimeout(() => self.runData(), config.intervals.runData);
       }
     }
+  };
+
+  this.checkAdressResponse = (states) => {
+    return states.length === 2 && states[0].toString(16) === config.daumCommands.get_Adress;
   };
 
   this.checkRunData = function (states) {
     const i = 0;
 
-    return (states[i].toString(16) === config.daumCommands.run_Data &&          // 1. Byte: Run_Daten
-      parseHexToInt(states[i + 1]) === parseInt(daumCockpitAdress) &&           // 2. Byte: Cockpit-Address
-      parseHexToInt(states[i + 2]) === config.daumRanges.manual_program &&      // 3. Byte: Valid Program (here: manual)
+    return (parseHexToInt(states[i + 2]) === config.daumRanges.manual_program &&      // 3. Byte: Valid Program (here: manual)
       parseHexToInt(states[i + 3]) <= config.daumRanges.max_Person &&           // 4. Byte: Valid Person
       parseHexToInt(states[i + 5]) >= config.daumRanges.min_power &&            // 6. Byte: Valid Power Range
       parseHexToInt(states[i + 5]) <= config.daumRanges.max_power &&
@@ -263,11 +263,7 @@ function daumUSB () {
         self.emitter.emit('key', '[daumUSB.js] - looking for cockpit address');
 
         // get address from ergobike
-        if (config.mock.daumUSB) {
-          gotAdressSuccess = true;
-        } else {
-          self.getAdress();
-        }
+        self.getAdress();
       }
     });
 
@@ -346,6 +342,9 @@ function daumUSB () {
 
   // get cockpit adress - simplified by using setDaumCommand function
   this.getAdress = function () {
+    log('[daumUSB.js] - getAdress');
+    self.emitter.emit('key', '[daumUSB.js] - getAdress');
+
     self.setDaumCommand(config.daumCommands.get_Adress, 'none', 'none');
   };
 
@@ -403,6 +402,10 @@ function daumUSB () {
 
 function parseHexToInt(hex) {
   return parseInt(hex.toString(16), 16);
+}
+
+function mockGetAdress () {
+  return new Buffer.from('1100');
 }
 
 function mockRunData () {
