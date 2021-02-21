@@ -190,7 +190,7 @@ function daumUSB () {
   this.checkRunData = function (states) {
     const i = 0;
 
-    return (parseHexToInt(states[i]) === parseInt(config.daumCommands.run_Data) &&  // 1. Byte: Run_Daten
+    return (states[i].toString(16) === config.daumCommands.run_Data &&          // 1. Byte: Run_Daten
       parseHexToInt(states[i + 1]) === parseInt(daumCockpitAdress) &&           // 2. Byte: Cockpit-Address
       parseHexToInt(states[i + 2]) === config.daumRanges.manual_program &&      // 3. Byte: Valid Program (here: manual)
       parseHexToInt(states[i + 3]) <= config.daumRanges.max_Person &&           // 4. Byte: Valid Person
@@ -409,7 +409,7 @@ function mockRunData () {
   const temp = 70 + Math.floor(Math.random() * 5);
   const rpm = temp.toString(16);
 
-  return new Buffer.from('280000000019' + rpm + '1D0000000000000000040000');
+  return new Buffer.from('400000000019' + rpm + '1D0000000000000000040000');
 }
 
 module.exports = daumUSB;
