@@ -78,7 +78,13 @@ function daumUSB () {
       // Check first two bytes to assign response data to previously sent command
       switch(self.getResponseHeader(numbers)) {
         case config.daumCommands.check_Cockpit + daumCockpitAdress:
-          log('[daumUSB.js] - check cockpit');
+          log('[daumUSB.js] - check cockpit response');
+          break;
+        case config.daumCommands.set_Gear + daumCockpitAdress:
+          log('[daumUSB.js] - check cockpit response');
+          break;
+        case config.daumCommands.set_Prog + daumCockpitAdress:
+          log('[daumUSB.js] - set program response');
           break;
 
         case config.daumCommands.run_Data + daumCockpitAdress:
