@@ -206,8 +206,8 @@ function daumUSB () {
       parseHexToInt(states[i + 6]) <= config.daumRanges.max_rpm &&
       parseHexToInt(states[i + 7]) >= config.daumRanges.min_speed &&            // 8. Byte: Valid Speed Range
       parseHexToInt(states[i + 7]) <= config.daumRanges.max_speed &&
-      parseHexToInt(states[i + 16]) >= config.daumRanges.min_gear &&            // 17. Byte: Valid Gear Range
-      parseHexToInt(states[i + 16]) <= config.daumRanges.max_gear);
+      parseHexToInt(states[i + 16]) >= config.daumRanges.min_gear)              // 17. Byte: Valid Gear Range
+      // && parseHexToInt(states[i + 16]) <= config.daumRanges.max_gear);
   };
 
   // open port as specified by daum
