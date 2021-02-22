@@ -162,7 +162,7 @@ function daumUSB () {
     if (gotAdressSuccess === false) {
       if (checkAdressResponse(numbers)) {
         // get the address from the stream by using the index
-        daumCockpitAdress = (states[1]).toString();
+        daumCockpitAdress = prepareCockpitAddress(states);
         logger.info('getAdress - [Adress]: ' + daumCockpitAdress);
         self.emitter.emit('key', '[daumUSB.js] - getAdress - [Adress]: ' + daumCockpitAdress);
 
@@ -202,6 +202,7 @@ function daumUSB () {
             // }
             // const hr = 99 // !!! can be deleted - have to check BLE code on dependencies
             // if (!isNaN(hr)) { data.hr = hr } // !!! can be deleted - have to check BLE code on dependencies
+            // TODO: check if we have to do a parseHexToInt here
             const rpm = (states[6]);
             if (!isNaN(rpm) && (rpm >= config.daumRanges.min_rpm && rpm <= config.daumRanges.max_rpm)) {
               if (rpm - global.globalrpm_daum >= config.daumRanges.rpm_threshold) {
@@ -455,15 +456,21 @@ function checkRunData(states) {
 }
 
 /**
- * Gets header of response data (1. Byte: Command; 2. Byte: Cockpit-Address)
+ * Prepares Cockpit-Address for further use
  */
-function getResponseHeader(data) {
+function prepareCockpitAddress(data) {
   let address = data[1].toString(16);
   if (address.length === 1) {
     address = '0' + address;
   }
-  const responseHeader = data[0].toString(16) + address;
-  return responseHeader;
+  return address;
+}
+
+/**
+ * Gets header of response data (1. Byte: Command; 2. Byte: Cockpit-Address)
+ */
+function getResponseHeader(data) {
+  return data[0].toString(16) + prepareCockpitAddress(data);
 }
 
 function parseHexToInt(hex) {
