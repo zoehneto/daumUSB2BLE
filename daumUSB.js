@@ -23,12 +23,12 @@ function daumUSB () {
 
   // write data to port
   this.write = function (string) {
-    logger.debug('this.write - [OUT]: ' + string.toString('hex'));
+    logger.debug('[OUT]: ' + string.toString('hex'));
     if (self.port) {
       const buffer = new Buffer.from(string);
       self.port.write(buffer);
     } else {
-      logger.warn('this.write - Communication port is not open - not sending data: ' + string);
+      logger.warn('[OUT]: Communication port is not open - not sending data: ' + string);
     }
   };
 
@@ -37,15 +37,16 @@ function daumUSB () {
     if (address.length === 1) {
       address = '0' + address;
     }
-      return data[0].toString(16) + address;  // 1. Byte: Command; 2. Byte: Cockpit-Address
+    const responseHeader = data[0].toString(16) + address;  // 1. Byte: Command; 2. Byte: Cockpit-Address
+    return responseHeader;
   };
 
   // used when port open to get data stream from buffer and grab the values, e.g. speed, rpm,...
   this.readAndDispatch = function (numbers) {
-    logger.debug('readAndDispatch - [IN]: ' + numbers.toString('hex'));
+    logger.debug('[IN]: ' + numbers.toString('hex'));
     self.emitter.emit('raw', numbers);
     let states = numbers;
-    const data = {};
+    const data = {speed: global.globalspeed_daum, rpm: global.globalrpm_daum, gear: global.globalgear_daum, power: global.globalpower_daum};
     let failure = false;
 
     if (gotAdressSuccess === false) {
@@ -72,13 +73,13 @@ function daumUSB () {
       // Check first two bytes to assign response data to previously sent command
       switch(self.getResponseHeader(numbers)) {
         case config.daumCommands.check_Cockpit + daumCockpitAdress:
-          logger.debug('check cockpit response');
+          logger.debug('check cockpit response detected');
           break;
         case config.daumCommands.set_Gear + daumCockpitAdress:
-          logger.debug('check cockpit response');
+          logger.debug('set gear response detected');
           break;
         case config.daumCommands.set_Prog + daumCockpitAdress:
-          logger.debug('set program response');
+          logger.debug('set program response detected');
           break;
 
         case config.daumCommands.run_Data + daumCockpitAdress:
@@ -170,6 +171,9 @@ function daumUSB () {
             }
 
             setTimeout(() => self.runData(), config.intervals.runData);
+          } else {
+            logger.warn('the run data response is not valid');
+            self.getRunData();
           }
           break;
 
@@ -180,9 +184,13 @@ function daumUSB () {
           logger.debug('Failures: ' + self.failures);
 
           logger.info('no valid response found. retrying command to get run data...');
-          setTimeout(() => self.runData(), config.intervals.runData);
+          self.getRunData();
       }
     }
+  };
+
+  this.getRunData = () =>{
+    setTimeout(() => self.runData(), config.intervals.runData);
   };
 
   this.checkAdressResponse = (states) => {
@@ -190,18 +198,24 @@ function daumUSB () {
   };
 
   this.checkRunData = function (states) {
-    const i = 0;
-
-    return (parseHexToInt(states[i + 2]) === config.daumRanges.manual_program &&      // 3. Byte: Valid Program (here: manual)
-      parseHexToInt(states[i + 3]) <= config.daumRanges.max_Person &&           // 4. Byte: Valid Person
-      parseHexToInt(states[i + 5]) >= config.daumRanges.min_power &&            // 6. Byte: Valid Power Range
-      parseHexToInt(states[i + 5]) <= config.daumRanges.max_power &&
-      parseHexToInt(states[i + 6]) >= config.daumRanges.min_rpm &&              // 7. Byte: Valid RPM
-      parseHexToInt(states[i + 6]) <= config.daumRanges.max_rpm &&
-      parseHexToInt(states[i + 7]) >= config.daumRanges.min_speed &&            // 8. Byte: Valid Speed Range
-      parseHexToInt(states[i + 7]) <= config.daumRanges.max_speed &&
-      parseHexToInt(states[i + 16]) >= config.daumRanges.min_gear)              // 17. Byte: Valid Gear Range
-      // && parseHexToInt(states[i + 16]) <= config.daumRanges.max_gear);
+    if (states.length < 17) {
+      logger.warn('the given run data is not long enough');
+      return false;
+    }
+    // TODO: maybe we have to be more rigorous here
+    if (parseHexToInt(states[2]) === config.daumRanges.manual_program &&      // 3. Byte: Valid Program (here: manual)
+      parseHexToInt(states[3]) <= config.daumRanges.max_Person &&           // 4. Byte: Valid Person
+      parseHexToInt(states[5]) >= config.daumRanges.min_power &&            // 6. Byte: Valid Power Range
+      parseHexToInt(states[5]) <= config.daumRanges.max_power &&
+      parseHexToInt(states[6]) >= config.daumRanges.min_rpm &&              // 7. Byte: Valid RPM
+      parseHexToInt(states[6]) <= config.daumRanges.max_rpm &&
+      parseHexToInt(states[7]) >= config.daumRanges.min_speed &&            // 8. Byte: Valid Speed Range
+      parseHexToInt(states[7]) <= config.daumRanges.max_speed &&
+      parseHexToInt(states[16]) >= config.daumRanges.min_gear &&              // 17. Byte: Valid Gear Range
+      parseHexToInt(states[16]) <= config.daumRanges.max_gear) {
+      logger.warn('the given run data is not completely valid, but we are trying to filter it anyway');
+    }
+    return true;
   };
 
   // open port as specified by daum
@@ -412,7 +426,7 @@ function mockGetAdress () {
 function mockRunData () {
   const temp = 70 + Math.floor(Math.random() * 5);
   const rpm = temp.toString(16);
-
+  //return new Buffer.from('40000002000500000000000000000000810000');
   return new Buffer.from('400000000019' + rpm + '1D0000000000000000040000');
 }
 
