@@ -114,16 +114,16 @@ function daumUSB () {
    */
   this.start = function () {
     // reset to program 0
-    setTimeout(self.setProgram(config.daumRanges.manual_program), config.timeouts.start);
+    setTimeout(() => self.setProgram(config.daumRanges.manual_program), config.timeouts.start);
     self.emitter.emit('key', '[daumUSB.js] - setProgram to 0');
 
     // reset the gears
     // this forces daum cockpit to change gears instead of power when using the buttons or the jog wheel
-    setTimeout(self.setGear(config.daumRanges.min_gear), config.timeouts.start);
+    setTimeout(() => self.setGear(config.daumRanges.min_gear), config.timeouts.start);
     self.emitter.emit('key', '[daumUSB.js] - setGear to minimum gear');
 
     // get run data after successful start up sequence
-    setTimeout(self.getRunData(), config.timeouts.start);
+    setTimeout(() => self.getRunData(), config.timeouts.start);
   };
 
   /**
