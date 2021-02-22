@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 const express = require('express');
 const app = require('express')();
-const server = require('http').createServer(app);                         // for getting IP dynamicaly in index.ejs
-const io = require('socket.io')(server);                                  // for getting IP dynamicaly in index.ejs
+const server = require('http').createServer(app);                         // for getting IP dynamically in index.ejs
+const io = require('socket.io')(server);                                  // for getting IP dynamically in index.ejs
 const path = require('path');
 const { version } = require('./package.json');                            // get version number from package.json
 const Logger = require('./logger');
 const config = require('config-yml');
 
-const DaumUSB = require('./daumUSB');
+const DaumUSB = require('./USB/daumUSB');
 const DaumSIM = require('./daumSIM');
 const DaumBLE = config.mock.BLE ? require('./mock/daumBLE') : require('./BLE/daumBLE');
 
@@ -139,7 +139,7 @@ io.on('connection', socket => {
         power = power + config.daumRanges.power_factor;
         break;
       default:
-        logger.debug('set Gear can not be processed (setting last known power)');
+        logger.debug('set Power can not be processed (setting last known power)');
     }
     daumUSB.setPower(power);
     io.emit('raw', '[server.js] - set Power: ' + power);
@@ -251,17 +251,14 @@ daumBLE.on('error', string => {
 });
 
 daumObs.on('error', string => {
-  logger.debug('error: ' + string);
   io.emit('error', '[server.js] - ' + string);
 });
 
 daumObs.on('key', string => {
-  logger.debug('key: ' + string);
   io.emit('key', '[server.js] - ' + string);
 });
 
 daumObs.on('raw', string => {
-  logger.debug('raw: ' + string.toString('hex'));
   io.emit('raw', string.toString('hex'));
   
   // emit version number to webserver

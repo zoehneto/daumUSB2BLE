@@ -1,10 +1,10 @@
 const config = require('config-yml');
 
 const logLevels = {
-  DEBUG: 0,
-  INFO: 1,
-  WARN: 2,
-  ERROR: 3,
+  DEBUG: 3,
+  INFO: 2,
+  WARN: 1,
+  ERROR: 0,
 };
 
 class logger {
@@ -14,7 +14,7 @@ class logger {
   }
 
   checkLogLevel(logLevel) {
-    return config.DEBUG.daumUSB >= logLevel;
+    return this.level >= logLevel;
   }
 
   debug(message) {
