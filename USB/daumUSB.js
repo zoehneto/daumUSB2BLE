@@ -15,6 +15,7 @@ function daumUSB () {
   self.parser = null;
   self.emitter = new EventEmitter();
   self.failures = 0;
+  self.startUpComplete = false;
 
   // this script is looking for the address, this is working, for default, I'll set this to 00
   let daumCockpitAdress = config.daumCockpit.adress;
@@ -192,6 +193,8 @@ function daumUSB () {
           break;
 
         case config.daumCommands.run_Data + daumCockpitAdress:
+          self.startUpComplete = true;
+
           if (checkRunData(states)) {
             // const cadence = (states[6])
             // if (!isNaN(cadence) && (cadence >= config.daumRanges.min_rpm && cadence <= config.daumRanges.max_rpm)) {
@@ -290,8 +293,10 @@ function daumUSB () {
           self.emitter.emit('error', '[daumUSB.js] - Unrecognized packet: ' + numbers.toString('hex'));
           logger.debug('Failures: ' + self.failures);
 
-          logger.warn('no valid response found. retrying to get run data...');
-          self.getRunData();
+          if (!self.startUpComplete) {
+            logger.warn('no valid response found and start up sequence not complete. trying to get run data anyway...');
+            self.getRunData();
+          }
       }
     }
   };
