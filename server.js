@@ -68,14 +68,14 @@ process.on('SIGINT', () => {
 // Web server callback, listen for actions taken at the server GUI, not from Daum or BLE
 // /////////////////////////////////////////////////////////////////////////
 io.on('connection', socket => {
-  logger.debug('connected to socketio');
+  logger.info('connected to socketio');
 
   socket.on('reset', function (data) {
     io.emit('key', '[server.js] - ergoFACE Server started');
   });
 
   socket.on('restart', function (data) {
-    logger.debug('restart');
+    logger.info('restart');
     geargpio = 1;
     daumUSB.setGear(geargpio);
     setTimeout(daumUSB.restart, 1000);
@@ -83,13 +83,13 @@ io.on('connection', socket => {
   });
 
   socket.on('stop', function (data) {
-    logger.debug('stop');
+    logger.info('stop');
     daumUSB.stop();
     io.emit('key', '[server.js] - stop');
   });
 
   socket.on('setProgram', function (data) {
-    logger.debug('set Program');
+    logger.info('set Program');
     const programID = data;
     daumUSB.setProgram(programID);
     io.emit('key', '[server.js] - set Program ID: ' + programID);
@@ -98,7 +98,7 @@ io.on('connection', socket => {
   socket.on('shiftGear', function (data) {
     // via webserver - set gears - !!!this is in conflict with gpio gear changing, because no read of gears when using gpios
     // NOTE: by changing the gear here, the cockpit switches to gear mode (jog wheel switches only gears from that time)
-    logger.debug('shift Gear');
+    logger.info('shift Gear');
     let gear = global.globalgear_daum;
 
     switch (data) {
@@ -115,14 +115,14 @@ io.on('connection', socket => {
         gear = gear + 1 <= config.daumRanges.max_gear ? gear + 1 : config.daumRanges.max_gear;
         break;
       default:
-        logger.debug('set Gear can not be processed (setting last known gear)');
+        logger.warn('set Gear can not be processed (setting last known gear)');
     }
     daumUSB.setGear(gear);
     io.emit('raw', '[server.js] - set Gear: ' + gear);
   });
 
   socket.on('shiftPower', function (data) {
-    logger.debug('shift Power');
+    logger.info('shift Power');
     let power = global.globalpower_daum;
 
     switch (data) {
@@ -139,7 +139,7 @@ io.on('connection', socket => {
         power = power + config.daumRanges.power_factor;
         break;
       default:
-        logger.debug('set Power can not be processed (setting last known power)');
+        logger.warn('set Power can not be processed (setting last known power)');
     }
     daumUSB.setPower(power);
     io.emit('raw', '[server.js] - set Power: ' + power);
@@ -148,7 +148,7 @@ io.on('connection', socket => {
   socket.on('setGear', function (data) {
     // via webserver - set gears - !!!this is in conflict with gpio gear changing, because no read of gears when using gpios
     // NOTE: by changing the gear here, the cockpit switches to gear mode (jog wheel switches only gears from that time)
-    logger.debug('set Gear');
+    logger.info('set Gear');
     const gear = data;
     daumUSB.setGear(gear);
     io.emit('raw', '[server.js] - set Gear: ' + gear);
@@ -156,7 +156,7 @@ io.on('connection', socket => {
 
   socket.on('mode', function (data) { 
     // via webserver - switch mode ERG / SIM
-    logger.debug('switch mode');
+    logger.info('switch mode');
     global.globalmode = data;
     const mode = data;
     io.emit('key', '[server.js] - switch mode: ' + mode);
@@ -164,7 +164,7 @@ io.on('connection', socket => {
   
   socket.on('switch', function (data) { 
     // via webserver - switch Power / Gear shifting
-    logger.debug('switch');
+    logger.info('switch');
     global.globalswitch = data;
     // const switchpg = data
     io.emit('key', '[server.js] - switch: ' + global.globalswitch);
@@ -268,7 +268,7 @@ daumObs.on('raw', string => {
 daumObs.on('data', data => {
   // get runData from daumUSB
   
-  logger.debug('data:' + JSON.stringify(data));
+  logger.info('data:' + JSON.stringify(data));
 
   if ('speed' in data) io.emit('speed', data.speed);
   if ('power' in data) io.emit('power', data.power);

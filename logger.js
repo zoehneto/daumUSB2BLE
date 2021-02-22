@@ -7,6 +7,12 @@ const logLevels = {
   ERROR: 0,
 };
 
+const colors = {
+  RED: "\x1b[31m%s\x1b[0m",
+  YELLOW: "\x1b[33m%s\x1b[0m",
+  BLUE: "\x1b[34m%s\x1b[0m",
+};
+
 class logger {
   constructor(className) {
     this.level = config.DEBUG.level;
@@ -29,19 +35,19 @@ class logger {
 
   info(message) {
     if (this.checkLogLevel(logLevels.INFO)) {
-      console.info(`${this.getDateTime()} [INFO]: ${this.className} - ${message}`);
+      console.info(colors.BLUE, `${this.getDateTime()} [INFO]: ${this.className} - ${message}`);
     }
   }
 
   warn(message) {
     if (this.checkLogLevel(logLevels.WARN)) {
-      console.warn(`${this.getDateTime()} [WARN]: ${this.className} - ${message}`);
+      console.warn(colors.YELLOW, `${this.getDateTime()} [WARN]: ${this.className} - ${message}`);
     }
   }
 
   error(message) {
     if (this.checkLogLevel(logLevels.ERROR)) {
-      console.error(`${this.getDateTime()} [ERROR]: ${this.className} - ${message}`);
+      console.error(colors.RED, `${this.getDateTime()} [ERROR]: ${this.className} - ${message}`);
     }
   }
 }
