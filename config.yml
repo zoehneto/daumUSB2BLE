@@ -3,6 +3,7 @@ DEBUG:
     server: true
     daumSIM: true
     BLE: false
+    level: 0  # DEBUG
 
 mock:
     daumUSB: false

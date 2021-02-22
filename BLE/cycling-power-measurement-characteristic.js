@@ -1,11 +1,8 @@
 const Bleno = require('bleno');
 const config = require('config-yml');
+const Logger = require('./logger');
 
-function log (msg) {
-  if (config.DEBUG.BLE) {
-    console.log(msg);
-  }
-}
+const logger = new Logger('cycling-power-measurement-characteristic.js');
 
 // Spec
 // https://developer.bluetooth.org/gatt/characteristics/Pages/CharacteristicViewer.aspx?u=org.bluetooth.characteristic.cycling_power_measurement.xml
@@ -37,13 +34,13 @@ class CyclingPowerMeasurementCharacteristic extends Bleno.Characteristic {
   }
 
   onSubscribe (maxValueSize, updateValueCallback) {
-    log('[cycling-power-measurement-characteristic.js] - client subscribed to PM');
+    logger.debug('client subscribed to PM');
     this._updateValueCallback = updateValueCallback;
     return this.RESULT_SUCCESS;
   }
 
   onUnsubscribe () {
-    log('[cycling-power-measurement-characteristic.js] - client unsubscribed from PM');
+    logger.debug('client unsubscribed from PM');
     this._updateValueCallback = null;
     return this.RESULT_UNLIKELY_ERROR;
   }
@@ -68,13 +65,13 @@ class CyclingPowerMeasurementCharacteristic extends Bleno.Characteristic {
 
     if ('power' in event) {
       const power = event.power;
-      log('[cycling-power-measurement-characteristic.js] - power: ' + power);
+      logger.debug('power: ' + power);
       buffer.writeInt16LE(power, 2);
     }
 
     if ('rpm' in event) {
       const rpm = event.rpm;
-      log('[cycling-power-measurement-characteristic.js] - rpm: ' + event.rpm);
+      logger.debug('rpm: ' + event.rpm);
       buffer.writeUInt16LE(rpm, 4);
     }
 

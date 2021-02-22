@@ -3,12 +3,9 @@
 // https://www.gribble.org/cycling/power_v_speed.html
 
 const config = require('config-yml');
+const Logger = require('./logger');
 
-function log (msg) {
-  if (config.DEBUG.daumSIM) {
-    console.log(msg);
-  }
-}
+const logger = new Logger('daumSIM.js');
 
 // ///////////////////////////////////////////////////////////////
 // usage: put daum in program 0 = watt mode and toggle ergoFACE to SIM mode.
@@ -20,7 +17,7 @@ const maxGrade = 8;       // maximum gradient in %
 
 function daumSIM () {
   this.physics = function (windspeedz, gradez, crrz, cwz, rpmd, speedd, geard) {
-    log('[daumSIM.js] - physics calculation started');
+    logger.debug('physics calculation started');
     // io.emit('raw', 'Bike SIM Mode - physics calculation started')
 
     //  Rider variables
@@ -65,16 +62,16 @@ function daumSIM () {
 
     // Cycling Wattage Calculator - https://www.omnicalculator.com/sports/cycling-wattage
     const forceofgravity = g * Math.sin(Math.atan(grade / 100)) * mass;
-    log('[daumSIM.js] - forceofgravity: ', forceofgravity);
+    logger.debug('forceofgravity: ', forceofgravity);
 
     const forcerollingresistance = g * Math.cos(Math.atan(grade / 100)) * mass * crr;
-    log('[daumSIM.js] - forcerollingresistance: ', forcerollingresistance);
+    logger.debug('forcerollingresistance: ', forcerollingresistance);
 
     const forceaerodynamic = 0.5 * cd * p * Math.pow(v + w, 2);
-    log('[daumSIM.js] - forceaerodynamic: ', forceaerodynamic);
+    logger.debug('forceaerodynamic: ', forceaerodynamic);
 
     const simpower = (forceofgravity + forcerollingresistance + forceaerodynamic) * v / e;
-    log('[daumSIM.js] - SIM calculated power: ', simpower);
+    logger.debug('SIM calculated power: ', simpower);
 
     global.globalsimpower_daum = simpower;
   }

@@ -5,12 +5,14 @@ const server = require('http').createServer(app);                         // for
 const io = require('socket.io')(server);                                  // for getting IP dynamicaly in index.ejs
 const path = require('path');
 const { version } = require('./package.json');                            // get version number from package.json
-
+const Logger = require('./logger');
 const config = require('config-yml');
 
 const DaumUSB = require('./daumUSB');
 const DaumSIM = require('./daumSIM');
 const DaumBLE = config.mock.BLE ? require('./mock/daumBLE') : require('./BLE/daumBLE');
+
+const logger = new Logger('server.js');
 
 // instantiate hardware switch for shifting up/down gears
 const Gpio = require('onoff').Gpio;
@@ -20,13 +22,6 @@ const shiftUp = config.gpio.enabled ?
 const shiftDown = config.gpio.enabled ?
   new Gpio(17, 'in', 'rising', { debounceTimeout: 10 }) :
   {watch: () => {}, unexport: () => {}};
-
-// TODO: move logging into separate logger class
-function log (msg) {
-  if (config.DEBUG.server) {
-    console.log(msg);
-  }
-}
 
 // init global variables
 global.globalspeed_daum = config.globals.speed_daum;
@@ -54,7 +49,7 @@ app.get('/', function (req, res) {
 // start server listening on specified port
 server.listen(process.env.PORT || config.server.port, function () {
   // for getting IP dynamicaly in index.ejs and not to enter it manually
-  log('[server.js] - listening on port 3000!');
+  logger.debug('listening on port 3000!');
 });
 
 // instantiation of necessary modules
@@ -64,7 +59,7 @@ const daumBLE = new DaumBLE(serverCallback);
 const daumObs = daumUSB.open();
 
 process.on('SIGINT', () => {
-  log('[server.js] - detected SIGINT: initiate shutdown...');
+  logger.debug('detected SIGINT: initiate shutdown...');
   daumUSB.stop();
   server.close();
 });
@@ -73,14 +68,14 @@ process.on('SIGINT', () => {
 // Web server callback, listen for actions taken at the server GUI, not from Daum or BLE
 // /////////////////////////////////////////////////////////////////////////
 io.on('connection', socket => {
-  log('[server.js] - connected to socketio');
+  logger.debug('connected to socketio');
 
   socket.on('reset', function (data) {
     io.emit('key', '[server.js] - ergoFACE Server started');
   });
 
   socket.on('restart', function (data) {
-    log('[server.js] - restart');
+    logger.debug('restart');
     geargpio = 1;
     daumUSB.setGear(geargpio);
     setTimeout(daumUSB.restart, 1000);
@@ -88,13 +83,13 @@ io.on('connection', socket => {
   });
 
   socket.on('stop', function (data) {
-    log('[server.js] - stop');
+    logger.debug('stop');
     daumUSB.stop();
     io.emit('key', '[server.js] - stop');
   });
 
   socket.on('setProgram', function (data) {
-    log('[server.js] - set Program');
+    logger.debug('set Program');
     const programID = data;
     daumUSB.setProgram(programID);
     io.emit('key', '[server.js] - set Program ID: ' + programID);
@@ -103,7 +98,7 @@ io.on('connection', socket => {
   socket.on('shiftGear', function (data) {
     // via webserver - set gears - !!!this is in conflict with gpio gear changing, because no read of gears when using gpios
     // NOTE: by changing the gear here, the cockpit switches to gear mode (jog wheel switches only gears from that time)
-    log('[server.js] - shift Gear');
+    logger.debug('shift Gear');
     let gear = global.globalgear_daum;
 
     switch (data) {
@@ -120,14 +115,14 @@ io.on('connection', socket => {
         gear = gear + 1 <= config.daumRanges.max_gear ? gear + 1 : config.daumRanges.max_gear;
         break;
       default:
-        log('[server.js] - set Gear can not be processed (setting last known gear)');
+        logger.debug('set Gear can not be processed (setting last known gear)');
     }
     daumUSB.setGear(gear);
     io.emit('raw', '[server.js] - set Gear: ' + gear);
   });
 
   socket.on('shiftPower', function (data) {
-    log('[server.js] - shift Power');
+    logger.debug('shift Power');
     let power = global.globalpower_daum;
 
     switch (data) {
@@ -144,7 +139,7 @@ io.on('connection', socket => {
         power = power + config.daumRanges.power_factor;
         break;
       default:
-        log('[server.js] - set Gear can not be processed (setting last known power)');
+        logger.debug('set Gear can not be processed (setting last known power)');
     }
     daumUSB.setPower(power);
     io.emit('raw', '[server.js] - set Power: ' + power);
@@ -153,7 +148,7 @@ io.on('connection', socket => {
   socket.on('setGear', function (data) {
     // via webserver - set gears - !!!this is in conflict with gpio gear changing, because no read of gears when using gpios
     // NOTE: by changing the gear here, the cockpit switches to gear mode (jog wheel switches only gears from that time)
-    log('[server.js] - set Gear');
+    logger.debug('set Gear');
     const gear = data;
     daumUSB.setGear(gear);
     io.emit('raw', '[server.js] - set Gear: ' + gear);
@@ -161,7 +156,7 @@ io.on('connection', socket => {
 
   socket.on('mode', function (data) { 
     // via webserver - switch mode ERG / SIM
-    log('[server.js] - switch mode');
+    logger.debug('switch mode');
     global.globalmode = data;
     const mode = data;
     io.emit('key', '[server.js] - switch mode: ' + mode);
@@ -169,7 +164,7 @@ io.on('connection', socket => {
   
   socket.on('switch', function (data) { 
     // via webserver - switch Power / Gear shifting
-    log('[server.js] - switch');
+    logger.debug('switch');
     global.globalswitch = data;
     // const switchpg = data
     io.emit('key', '[server.js] - switch: ' + global.globalswitch);
@@ -193,7 +188,7 @@ shiftUp.watch((err, value) => {
     if (global.globalswitch === 'Power') {
       // if mode is set to 'power', we increment watt
       daumUSB.setWattProfile(0); // increment power
-      log('[server.js] - increment Power');
+      logger.debug('increment Power');
       io.emit('raw', '[server.js] - increment Power');
     } else {
       // if mode is set to 'gear', we increment gears
@@ -202,7 +197,7 @@ shiftUp.watch((err, value) => {
         geargpio = geargpio + ratio;
         daumUSB.setGear(geargpio);
         
-        log('[server.js] - Shift to Gear: ' + geargpio);
+        logger.debug('Shift to Gear: ' + geargpio);
         io.emit('raw', '[server.js] - Shift to Gear: ' + geargpio);
       }
     }
@@ -223,7 +218,7 @@ shiftDown.watch((err, value) => {
       // if mode is set to 'power', we decrement watt
       daumUSB.setWattProfile(1);           // decrement power
 
-      log('[server.js] - decrement Power');
+      logger.debug('decrement Power');
       io.emit('raw', '[server.js] - decrement Power')
     } else {
       // if mode is set to 'gear', we decrement gears
@@ -231,7 +226,7 @@ shiftDown.watch((err, value) => {
         geargpio = geargpio - ratio; // shift n gears at a time, to avoid too much shifting
         daumUSB.setGear(geargpio);
         
-        log('[server.js] - Shift to Gear: ' + geargpio);
+        logger.debug('Shift to Gear: ' + geargpio);
         io.emit('raw', '[server.js] - Shift to Gear: ' + geargpio);
       }
     }
@@ -246,27 +241,27 @@ process.on('SIGINT', () => {
 // Bike information transfer to BLE & Webserver
 // /////////////////////////////////////////////////////////////////////////
 daumBLE.on('key', string => {
-  log('[server.js] - error: ' + string);
+  logger.debug('error: ' + string);
   io.emit('key', '[server.js] - ' + string);
 });
 
 daumBLE.on('error', string => {
-  log('[server.js] - error: ' + string);
+  logger.debug('error: ' + string);
   io.emit('error', '[server.js] - ' + string);
 });
 
 daumObs.on('error', string => {
-  log('[server.js] - error: ' + string);
+  logger.debug('error: ' + string);
   io.emit('error', '[server.js] - ' + string);
 });
 
 daumObs.on('key', string => {
-  log('[server.js] - key: ' + string);
+  logger.debug('key: ' + string);
   io.emit('key', '[server.js] - ' + string);
 });
 
 daumObs.on('raw', string => {
-  log('[server.js] - raw: ' + string.toString('hex'));
+  logger.debug('raw: ' + string.toString('hex'));
   io.emit('raw', string.toString('hex'));
   
   // emit version number to webserver
@@ -276,7 +271,7 @@ daumObs.on('raw', string => {
 daumObs.on('data', data => {
   // get runData from daumUSB
   
-  log('[server.js] - data:' + JSON.stringify(data));
+  logger.debug('data:' + JSON.stringify(data));
 
   if ('speed' in data) io.emit('speed', data.speed);
   if ('power' in data) io.emit('power', data.power);
@@ -295,7 +290,7 @@ function serverCallback (message, ...args) {
 
   switch (message) {
     case 'reset':
-      log('[server.js] - USB Reset triggered via BLE');
+      logger.debug('USB Reset triggered via BLE');
       io.emit('key', '[server.js] - Reset triggered via BLE');
       daumUSB.restart();
       success = true;
@@ -303,7 +298,7 @@ function serverCallback (message, ...args) {
 
     case 'control':
       // do nothing special
-      log('[server.js] - Bike under control via BLE');
+      logger.debug('Bike under control via BLE');
       io.emit('key', '[server.js] - Bike under control via BLE');
       io.emit('control', 'BIKE CONTROLLED');
       success = true;
@@ -311,12 +306,12 @@ function serverCallback (message, ...args) {
 
     case 'power':
       // ERG Mode - receive control point value via BLE from zwift or other app
-      log('[server.js] - Bike ERG Mode');
+      logger.debug('Bike ERG Mode');
 
       if (args.length > 0) {
         const watt = args[0];
         daumUSB.setPower(watt);
-        log('[server.js] - Bike in ERG Mode - set Power to: ', watt);
+        logger.debug('Bike in ERG Mode - set Power to: ', watt);
         io.emit('raw', '[server.js] - Bike in ERG Mode - set Power to: ' + watt);
         io.emit('control', 'ERG MODE');
         success = true;
@@ -325,7 +320,7 @@ function serverCallback (message, ...args) {
 
     case 'simulation': 
       // SIM Mode - calculate power based on physics
-      log('[server.js] - Bike in SIM Mode');
+      logger.debug('Bike in SIM Mode');
       const windspeed = Number(args[0]).toFixed(1);
       const grade = Number(args[1]).toFixed(1);
       const crr = Number(args[2]).toFixed(4);
