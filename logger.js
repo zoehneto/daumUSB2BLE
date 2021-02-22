@@ -17,27 +17,31 @@ class logger {
     return this.level >= logLevel;
   }
 
+  getDateTime() {
+    return new Date().toISOString();
+  }
+
   debug(message) {
     if (this.checkLogLevel(logLevels.DEBUG)) {
-      console.debug(`[DEBUG]: ${this.className} - ${message}`);
+      console.debug(`${this.getDateTime()} [DEBUG]: ${this.className} - ${message}`);
     }
   }
 
   info(message) {
     if (this.checkLogLevel(logLevels.INFO)) {
-      console.info(`[INFO]: ${this.className} - ${message}`);
+      console.info(`${this.getDateTime()} [INFO]: ${this.className} - ${message}`);
     }
   }
 
   warn(message) {
     if (this.checkLogLevel(logLevels.WARN)) {
-      console.warn(`[WARN]: ${this.className} - ${message}`);
+      console.warn(`${this.getDateTime()} [WARN]: ${this.className} - ${message}`);
     }
   }
 
   error(message) {
     if (this.checkLogLevel(logLevels.ERROR)) {
-      console.error(`[ERROR]: ${this.className} - ${message}`);
+      console.error(`${this.getDateTime()} [ERROR]: ${this.className} - ${message}`);
     }
   }
 }
