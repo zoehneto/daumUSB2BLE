@@ -9,6 +9,12 @@ const InterByteTimeout = require('@serialport/parser-inter-byte-timeout');
 const daumSIM = new DaumSIM();
 const logger = new Logger('daumUSB.js');
 
+const priorityLevel = {
+  LOW: 0,
+  MEDIUM: 1,
+  HIGH: 2,
+};
+
 function daumUSB () {
   const self = this;
   self.port = null;
@@ -118,22 +124,26 @@ function daumUSB () {
    * Initiates start up sequence to set Daum ergobike to a valid state
    */
   this.start = function () {
-    // reset to program 0
-    setTimeout(() => {
-      self.emitter.emit('key', '[daumUSB.js] - setProgram to 0');
-      self.setProgram(config.daumRanges.manual_program);
-
-      // reset the gears
-      // this forces daum cockpit to change gears instead of power when using the buttons or the jog wheel
+    if (config.mock.daumUSB) {
+      // skip start up sequence
+      setTimeout(() => self.getRunData(), config.timeouts.start);
+    } else {
       setTimeout(() => {
-        self.setGear(config.daumRanges.min_gear);
-        self.emitter.emit('key', '[daumUSB.js] - setGear to minimum gear');
+        // reset to program 0
+        self.emitter.emit('key', '[daumUSB.js] - setProgram to 0');
+        self.setProgram(config.daumRanges.manual_program);
 
-        // get run data after successful start up sequence
-        setTimeout(() => self.getRunData(), config.timeouts.start);
+        setTimeout(() => {
+          // reset the gears
+          // this forces daum cockpit to change gears instead of power when using the buttons or the jog wheel
+          self.setGear(config.daumRanges.min_gear);
+          self.emitter.emit('key', '[daumUSB.js] - setGear to minimum gear');
+
+          // get run data after successful start up sequence
+          setTimeout(() => self.getRunData(), config.timeouts.start);
+        }, config.timeouts.start);
       }, config.timeouts.start);
-
-    }, config.timeouts.start);
+    }
   };
 
   /**
@@ -190,9 +200,7 @@ function daumUSB () {
         gotAdressSuccess = true;
         logger.info('getAdress - [gotAdressSuccess]: ' + gotAdressSuccess);
 
-        // timeout is necessary to changes gears back to 1;
-        // there is an invalid value send, that sets gear 17 = 0x11,
-        // this should be filtered before data is read, but does not work
+        // inititate start up sequence
         setTimeout(self.start, config.timeouts.start);
 
       } else {
@@ -320,9 +328,8 @@ function daumUSB () {
           logger.debug('Failures: ' + self.failures);
 
           if (!self.startUpComplete) {
-            logger.warn('no valid response found and start up sequence not complete. trying to get run data anyway...');
-            self.queue.shift();
-            self.getRunData();
+            logger.warn('no valid response found and start up sequence not complete. retrying to start up...');
+            self.start();
           }
       }
     }
@@ -340,24 +347,37 @@ function daumUSB () {
   /**
    * Writes command to port
    */
-  this.write = function (command) {
-    self.queue.push({ id: Math.floor(Math.random() * 1000) + 1, command: command, priority: 0, retries: 0 });
+  this.write = function (command, priority=priorityLevel.LOW) {
+    self.queue.push({
+      id: Math.floor(Math.random() * 1000) + 1,
+      command: command,
+      priority: priority,
+      retries: 0,
+      ack: false
+    });
   };
 
   this.processQueue = () => {
-    if (self.queue.length > 0) {
-      const element = self.queue[0];
+    let element = self.queue.length > 0 ? self.queue[0] : null;
 
+    if (element && element.ack) {
+      // skip acknowledged element
+      self.queue.shift();
+      element = self.queue.length > 0 ? self.queue[0] : null;
+    }
+
+    if (element) {
       if (element.id === self.lastCommandId) {
         logger.warn('last command has not been acknowledged. retrying...');
 
         // TODO: maybe we have to delete some lower prioritized commands here instead of retrying them
 
         element.retries += 1;
-        self.queue[0] = { ...self.queue[0], retries: element.retries };
+        self.queue[0] = {...self.queue[0], retries: element.retries};
+
         if (element.retries > config.queue.max_retries) {
           logger.warn('this will be the last retry');
-          self.queue.shift();
+          self.acknowledgeCommand();
         }
       } else {
         self.lastCommandId = element.id;
@@ -369,10 +389,12 @@ function daumUSB () {
 
         self.port.write(buffer);
       } else {
-        logger.warn('[OUT]: Communication port is not open - not sending data: ' + command);
+        logger.warn('[OUT]: Communication port is not open - not sending data: ' + element.command);
       }
     } else {
-      logger.debug('there is nothing in the queue')
+      logger.debug('there is nothing in the queue.');
+      // TODO: get run data, because we have some time
+      // self.runData();
     }
 
     if (self.queue.length >= config.queue.max_commands) {
@@ -383,8 +405,8 @@ function daumUSB () {
 
   this.acknowledgeCommand = () => {
     if (self.queue.length > 0) {
-      logger.info('ack received - remove first command from queue');
-      self.queue.shift();
+      logger.info('ack received - flag first command from queue as done');
+      self.queue[0] = { ...self.queue[0], ack: true };
     } else {
       logger.warn('there is no command to acknowledge');
     }
@@ -393,7 +415,7 @@ function daumUSB () {
   /**
    * Sets Daum command - general function for sending data
    */
-  this.setDaumCommand = function (command, adress, sendData) {
+  this.setDaumCommand = function (command, adress, sendData, priority=priorityLevel.LOW) {
     if (command !== config.daumCommands.get_Adress) {
       if (gotAdressSuccess === true) {
         logger.debug('set command [0x' + command + ']: ' + sendData);
@@ -401,11 +423,11 @@ function daumUSB () {
         if (sendData === 'none') {
           // this is for commands that just have command and address - no data
           const datas = Buffer.from(command + ('00' + (adress).toString()).slice(-2), 'hex');
-          self.write(datas);
+          self.write(datas, priority);
         } else {
           // this is for commands that have command, address and data
           const datas = Buffer.from(command + ('00' + (adress).toString()).slice(-2) + ('00' + (sendData).toString(16)).slice(-2), 'hex');
-          self.write(datas);
+          self.write(datas, priority);
         }
       } else {
         // if no cockpit address found, just post the message and not execute the command
@@ -415,7 +437,7 @@ function daumUSB () {
     } else {
       // this is just for get address
       const datas = Buffer.from(command, 'hex');
-      self.write(datas);
+      self.write(datas, priority);
     }
   };
 
@@ -426,14 +448,14 @@ function daumUSB () {
     logger.info('get cockpit address');
     self.emitter.emit('key', '[daumUSB.js] - getAdress');
 
-    self.setDaumCommand(config.daumCommands.get_Adress, 'none', 'none');
+    self.setDaumCommand(config.daumCommands.get_Adress, 'none', 'none', priorityLevel.HIGH);
   };
 
   /**
    * Get person data
    */
   this.getPersonData = function () {
-    self.setDaumCommand(config.daumCommands.get_PersonData, daumCockpitAdress, 'none');
+    self.setDaumCommand(config.daumCommands.get_PersonData, daumCockpitAdress, 'none', priorityLevel.MEDIUM);
   };
 
   /**
@@ -445,7 +467,7 @@ function daumUSB () {
 
     self.setDaumCommand(config.mock.daumUSB ?
       mockRunData() :
-      config.daumCommands.run_Data, daumCockpitAdress, 'none');
+      config.daumCommands.run_Data, daumCockpitAdress, 'none', priorityLevel.LOW);
   };
 
   /**
@@ -464,28 +486,28 @@ function daumUSB () {
     }
     // round up and to step of 5 to match daum spec and devide by 5
     const ergopower = Math.round(power / config.daumRanges.power_factor);
-    self.setDaumCommand(config.daumCommands.set_Watt, daumCockpitAdress, ergopower);
+    self.setDaumCommand(config.daumCommands.set_Watt, daumCockpitAdress, ergopower, priorityLevel.HIGH);
   };
 
   /**
    * Set a program
    */
   this.setProgram = function (programID) {
-    self.setDaumCommand(config.daumCommands.set_Prog, daumCockpitAdress, programID);
+    self.setDaumCommand(config.daumCommands.set_Prog, daumCockpitAdress, programID, priorityLevel.HIGH);
   };
 
   /**
    * Set watt profile / increment or decrement 5 watt
    */
   this.setWattProfile = function (profile) {
-    self.setDaumCommand(config.daumCommands.set_WattProfile, daumCockpitAdress, profile);
+    self.setDaumCommand(config.daumCommands.set_WattProfile, daumCockpitAdress, profile, priorityLevel.HIGH);
   };
 
   /**
    * Set a gear
    */
   this.setGear = function (gear) {
-    self.setDaumCommand(config.daumCommands.set_Gear, daumCockpitAdress, gear);
+    self.setDaumCommand(config.daumCommands.set_Gear, daumCockpitAdress, gear, priorityLevel.HIGH);
   };
 }
 
