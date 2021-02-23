@@ -227,6 +227,11 @@ function daumUSB () {
           logger.debug('set gear response detected');
           break;
 
+        case config.daumCommands.set_Watt + daumCockpitAdress:
+          self.acknowledgeCommand(config.daumCommands.set_Watt + daumCockpitAdress);
+          logger.debug('set power response detected');
+          break;
+
         case config.daumCommands.set_Prog + daumCockpitAdress:
           self.acknowledgeCommand(config.daumCommands.set_Prog + daumCockpitAdress);
           logger.debug('set program response detected');
