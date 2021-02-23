@@ -139,7 +139,7 @@ function daumUSB () {
           self.setGear(config.daumRanges.min_gear);
           self.emitter.emit('key', '[daumUSB.js] - setGear to minimum gear');
 
-          log.info('start up complete');
+          logger.info('start up complete');
           // get run data after successful start up sequence
           setTimeout(() => self.getRunData(), config.timeouts.start);
         }, config.timeouts.start);
