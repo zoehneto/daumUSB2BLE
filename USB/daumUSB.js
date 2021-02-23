@@ -367,8 +367,8 @@ function daumUSB () {
   this.processQueue = () => {
     let element = self.queue.length > 0 ? self.queue[0] : null;
 
-    if (element && (element.ack || element.priority === priorityLevel.LOW)) {
-      // skip acknowledged element and lower prioritized commands
+    if (element && element.ack) {
+      // skip acknowledged element
       self.queue.shift();
       element = self.queue.length > 0 ? self.queue[0] : null;
     }
@@ -377,7 +377,7 @@ function daumUSB () {
       if (element.id === self.lastCommandId) {
         logger.warn('last command has not been acknowledged. retrying...');
 
-        element.retries += 1;
+        element.retries += element.priority === priorityLevel.LOW ? config.queue.max_retries : 1;
         self.queue[0] = {...self.queue[0], retries: element.retries};
 
         if (element.retries > config.queue.max_retries) {
