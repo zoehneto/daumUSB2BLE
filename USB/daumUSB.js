@@ -136,11 +136,11 @@ function daumUSB () {
    * Closes port to Daum ergobike
    */
   this.stop = function () {
-    if(self.port.isOpen) {
-      self.port.close();
-    }
     if(self.getRunDataInterval) {
       clearInterval(self.getRunDataInterval);
+    }
+    if(self.port.isOpen) {
+      self.port.close();
     }
   };
 
