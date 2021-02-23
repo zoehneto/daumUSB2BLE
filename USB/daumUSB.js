@@ -570,7 +570,7 @@ function checkRunData(states) {
     return true;
   }
   logger.warn('the given run data is not completely valid, but we are trying to filter it anyway');
-  return false;
+  return true;
 }
 
 /**
