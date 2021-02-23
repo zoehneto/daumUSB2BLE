@@ -17,6 +17,9 @@ function daumUSB () {
   self.failures = 0;
   self.startUpComplete = false;
   self.getRunDataInterval = null;
+  self.queueProcessor = null;
+  self.lastCommandId = null;
+  self.queue = [];
 
   // this script is looking for the address, this is working, for default, I'll set this to 00
   let daumCockpitAdress = config.daumCockpit.adress;
@@ -81,6 +84,7 @@ function daumUSB () {
       logger.debug('openPort - the serialport has been opened!');
       self.parser.on('data', self.readAndDispatch);
       self.port.drain();
+      self.queueProcessor = setInterval(self.processQueue, config.intervals.flushNext); // this is writing the data to the port
 
       if (gotAdressSuccess === false) {
         // check, otherwise after a restart via webserver, this will run again
@@ -133,12 +137,19 @@ function daumUSB () {
   };
 
   /**
-   * Closes port to Daum ergobike
+   * Closes port to Daum ergobike and clears intervals
    */
   this.stop = function () {
     if(self.getRunDataInterval) {
       clearInterval(self.getRunDataInterval);
     }
+
+    if(self.queueProcessor) {
+      self.queue = [];
+      self.lastCommandId = null;
+      clearInterval(self.queueProcessor);
+    }
+
     if(self.port.isOpen) {
       self.port.close();
     }
@@ -192,16 +203,22 @@ function daumUSB () {
       // Check first two bytes to assign response data to previously sent command
       switch(getResponseHeader(numbers)) {
         case config.daumCommands.check_Cockpit + daumCockpitAdress:
+          self.acknowledgeCommand();
           logger.debug('check cockpit response detected');
           break;
+
         case config.daumCommands.set_Gear + daumCockpitAdress:
+          self.acknowledgeCommand();
           logger.debug('set gear response detected');
           break;
+
         case config.daumCommands.set_Prog + daumCockpitAdress:
+          self.acknowledgeCommand();
           logger.debug('set program response detected');
           break;
 
         case config.daumCommands.run_Data + daumCockpitAdress:
+          self.acknowledgeCommand();
           self.startUpComplete = true;
 
           if (checkRunData(states)) {
@@ -298,12 +315,13 @@ function daumUSB () {
 
         default:
           self.failures++;
-          logger.error('Unrecognized packet: ' + numbers.toString('hex'));
+          logger.error('Unrecognized packet: ' + numbers.toString('hex') + ' - retrying last command');
           self.emitter.emit('error', '[daumUSB.js] - Unrecognized packet: ' + numbers.toString('hex'));
           logger.debug('Failures: ' + self.failures);
 
           if (!self.startUpComplete) {
             logger.warn('no valid response found and start up sequence not complete. trying to get run data anyway...');
+            self.queue.shift();
             self.getRunData();
           }
       }
@@ -323,12 +341,52 @@ function daumUSB () {
    * Writes command to port
    */
   this.write = function (command) {
-    logger.debug('[OUT]: ' + command.toString('hex'));
-    if (self.port) {
-      const buffer = new Buffer.from(command);
-      self.port.write(buffer);
+    self.queue.push({ id: Math.floor(Math.random() * 1000) + 1, command: command, priority: 0, retries: 0 });
+  };
+
+  this.processQueue = () => {
+    if (self.queue.length > 0) {
+      const element = self.queue[0];
+
+      if (element.id === self.lastCommandId) {
+        logger.warn('last command has not been acknowledged. retrying...');
+
+        // TODO: maybe we have to delete some lower prioritized commands here instead of retrying them
+
+        element.retries += 1;
+        self.queue[0] = { ...self.queue[0], retries: element.retries };
+        if (element.retries > config.queue.max_retries) {
+          logger.warn('this will be the last retry');
+          self.queue.shift();
+        }
+      } else {
+        self.lastCommandId = element.id;
+      }
+
+      if (self.port) {
+        logger.debug('[OUT]: ' + element.command.toString('hex'));
+        const buffer = new Buffer.from(element.command);
+
+        self.port.write(buffer);
+      } else {
+        logger.warn('[OUT]: Communication port is not open - not sending data: ' + command);
+      }
     } else {
-      logger.warn('[OUT]: Communication port is not open - not sending data: ' + command);
+      logger.debug('there is nothing in the queue')
+    }
+
+    if (self.queue.length >= config.queue.max_commands) {
+      logger.warn('maximum queue size reached. we have to remove some commands');
+      self.queue.shift();
+    }
+  };
+
+  this.acknowledgeCommand = () => {
+    if (self.queue.length > 0) {
+      logger.info('ack received - remove first command from queue');
+      self.queue.shift();
+    } else {
+      logger.warn('there is no command to acknowledge');
     }
   };
 

@@ -39,6 +39,7 @@ intervals:
     getAdress: 1000
     runData: 1000
     restart: 1000
+    flushNext: 500
 
 timeouts:
     open: 2000
@@ -151,3 +152,7 @@ daumRanges:
       rpm_threshold: 100
       power_threshold: 80
       max_Person: 4
+
+queue:
+    max_commands: 100
+    max_retries: 4
