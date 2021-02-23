@@ -227,7 +227,7 @@ function daumUSB () {
           break;
 
         case config.daumCommands.run_Data + daumCockpitAdress:
-          self.acknowledgeCommand();
+          // NOTE: run data has low priority, it doesn't have to be acknowledged
           self.startUpComplete = true;
 
           if (checkRunData(states)) {
@@ -361,8 +361,8 @@ function daumUSB () {
   this.processQueue = () => {
     let element = self.queue.length > 0 ? self.queue[0] : null;
 
-    if (element && element.ack) {
-      // skip acknowledged element
+    if (element && (element.ack || element.priority === priorityLevel.LOW)) {
+      // skip acknowledged element and lower prioritized commands
       self.queue.shift();
       element = self.queue.length > 0 ? self.queue[0] : null;
     }
@@ -370,8 +370,6 @@ function daumUSB () {
     if (element) {
       if (element.id === self.lastCommandId) {
         logger.warn('last command has not been acknowledged. retrying...');
-
-        // TODO: maybe we have to delete some lower prioritized commands here instead of retrying them
 
         element.retries += 1;
         self.queue[0] = {...self.queue[0], retries: element.retries};
