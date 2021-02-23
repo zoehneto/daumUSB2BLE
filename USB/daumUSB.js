@@ -233,7 +233,7 @@ function daumUSB () {
           break;
 
         case config.daumCommands.run_Data + daumCockpitAdress:
-          // NOTE: run data has low priority, it doesn't have to be acknowledged
+          self.acknowledgeCommand();
           self.startUpComplete = true;
 
           if (checkRunData(states)) {
