@@ -191,6 +191,7 @@ function daumUSB () {
 
     if (gotAdressSuccess === false) {
       if (checkAdressResponse(numbers)) {
+        self.acknowledgeCommand();
         // get the address from the stream by using the index
         daumCockpitAdress = prepareCockpitAddress(states);
         logger.info('getAdress - [Adress]: ' + daumCockpitAdress);
