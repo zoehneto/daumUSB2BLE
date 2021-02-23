@@ -16,6 +16,7 @@ function daumUSB () {
   self.emitter = new EventEmitter();
   self.failures = 0;
   self.startUpComplete = false;
+  self.getRunDataInterval = null;
 
   // this script is looking for the address, this is working, for default, I'll set this to 00
   let daumCockpitAdress = config.daumCockpit.adress;
@@ -114,16 +115,21 @@ function daumUSB () {
    */
   this.start = function () {
     // reset to program 0
-    setTimeout(() => self.setProgram(config.daumRanges.manual_program), config.timeouts.start);
-    self.emitter.emit('key', '[daumUSB.js] - setProgram to 0');
+    setTimeout(() => {
+      self.emitter.emit('key', '[daumUSB.js] - setProgram to 0');
+      self.setProgram(config.daumRanges.manual_program);
 
-    // reset the gears
-    // this forces daum cockpit to change gears instead of power when using the buttons or the jog wheel
-    setTimeout(() => self.setGear(config.daumRanges.min_gear), config.timeouts.start);
-    self.emitter.emit('key', '[daumUSB.js] - setGear to minimum gear');
+      // reset the gears
+      // this forces daum cockpit to change gears instead of power when using the buttons or the jog wheel
+      setTimeout(() => {
+        self.setGear(config.daumRanges.min_gear);
+        self.emitter.emit('key', '[daumUSB.js] - setGear to minimum gear');
 
-    // get run data after successful start up sequence
-    setTimeout(() => self.getRunData(), config.timeouts.start);
+        // get run data after successful start up sequence
+        setTimeout(() => self.getRunData(), config.timeouts.start);
+      }, config.timeouts.start);
+
+    }, config.timeouts.start);
   };
 
   /**
@@ -132,6 +138,9 @@ function daumUSB () {
   this.stop = function () {
     if(self.port.isOpen) {
       self.port.close();
+    }
+    if(self.getRunDataInterval) {
+      clearInterval(self.getRunDataInterval);
     }
   };
 
@@ -285,7 +294,6 @@ function daumUSB () {
           } else {
             logger.warn('the run data response is not valid');
           }
-          self.getRunData();
           break;
 
         default:
@@ -306,7 +314,9 @@ function daumUSB () {
    * Sends run data command after timeout
    */
   this.getRunData = () =>{
-    setTimeout(() => self.runData(), config.intervals.runData);
+    self.getRunDataInterval = setInterval(() => {
+      self.runData();
+    }, config.intervals.runData);
   };
 
   /**
