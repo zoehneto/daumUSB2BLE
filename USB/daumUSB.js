@@ -139,6 +139,7 @@ function daumUSB () {
           self.setGear(config.daumRanges.min_gear);
           self.emitter.emit('key', '[daumUSB.js] - setGear to minimum gear');
 
+          log.info('start up complete');
           // get run data after successful start up sequence
           setTimeout(() => self.getRunData(), config.timeouts.start);
         }, config.timeouts.start);
@@ -333,7 +334,7 @@ function daumUSB () {
           self.emitter.emit('error', '[daumUSB.js] - Unrecognized packet: ' + numbers.toString('hex'));
           logger.debug('Failures: ' + self.failures);
 
-          if (!self.startUpComplete) {
+          if (!self.startUpComplete && config.mock.daumUSB) {
             logger.warn('no valid response found and start up sequence not complete. retrying to start up...');
             self.start();
           }
