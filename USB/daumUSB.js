@@ -192,7 +192,7 @@ function daumUSB () {
 
     if (gotAdressSuccess === false) {
       if (checkAdressResponse(numbers)) {
-        self.acknowledgeCommand();
+        self.acknowledgeCommand(config.daumCommands.get_Adress);
         // get the address from the stream by using the index
         daumCockpitAdress = prepareCockpitAddress(states);
         logger.info('getAdress - [Adress]: ' + daumCockpitAdress);
@@ -213,27 +213,27 @@ function daumUSB () {
       // Check first two bytes to assign response data to previously sent command
       switch(getResponseHeader(numbers)) {
         case config.daumCommands.get_Adress + daumCockpitAdress:
-          self.acknowledgeCommand();
+          self.acknowledgeCommand(config.daumCommands.get_Adress + daumCockpitAdress);
           logger.debug('get cockpit address response detected');
           break;
 
         case config.daumCommands.check_Cockpit + daumCockpitAdress:
-          self.acknowledgeCommand();
+          self.acknowledgeCommand(config.daumCommands.check_Cockpit + daumCockpitAdress);
           logger.debug('check cockpit response detected');
           break;
 
         case config.daumCommands.set_Gear + daumCockpitAdress:
-          self.acknowledgeCommand();
+          self.acknowledgeCommand(config.daumCommands.set_Gear + daumCockpitAdress);
           logger.debug('set gear response detected');
           break;
 
         case config.daumCommands.set_Prog + daumCockpitAdress:
-          self.acknowledgeCommand();
+          self.acknowledgeCommand(config.daumCommands.set_Prog + daumCockpitAdress);
           logger.debug('set program response detected');
           break;
 
         case config.daumCommands.run_Data + daumCockpitAdress:
-          self.acknowledgeCommand();
+          self.acknowledgeCommand(config.daumCommands.run_Data + daumCockpitAdress);
           self.startUpComplete = true;
 
           if (checkRunData(states)) {
@@ -329,6 +329,7 @@ function daumUSB () {
           break;
 
         default:
+          self.acknowledgeCommand(config.daumCommands.run_Data + daumCockpitAdress);  // ack run data command anyway
           self.failures++;
           logger.error('Unrecognized packet: ' + numbers.toString('hex') + ' - retrying last command');
           self.emitter.emit('error', '[daumUSB.js] - Unrecognized packet: ' + numbers.toString('hex'));
@@ -345,9 +346,16 @@ function daumUSB () {
   /**
    * Sends run data command after timeout
    */
-  this.getRunData = () =>{
+  this.getRunData = () => {
     self.getRunDataInterval = setInterval(() => {
-      self.runData();
+      // push run data command if it is not already in the queue
+      const runDataCommands = self.queue.filter((element) => {
+        return getResponseHeader(element.command) === config.daumCommands.run_Data + daumCockpitAdress;
+      });
+
+      if (runDataCommands.length === 0) {
+        self.runData();
+      }
     }, config.intervals.runData);
   };
 
@@ -374,6 +382,7 @@ function daumUSB () {
     }
 
     if (element) {
+      logger.debug(`processing first of ${self.queue.length} element(s) in queue`);
       if (element.id === self.lastCommandId) {
         logger.warn('last command has not been acknowledged. retrying...');
 
@@ -382,7 +391,7 @@ function daumUSB () {
 
         if (element.retries > config.queue.max_retries) {
           logger.warn('this will be the last retry');
-          self.acknowledgeCommand();
+          self.acknowledgeCommand(getResponseHeader(self.queue[0].command));
         }
       } else {
         self.lastCommandId = element.id;
@@ -408,10 +417,19 @@ function daumUSB () {
     }
   };
 
-  this.acknowledgeCommand = () => {
+  this.acknowledgeCommand = (command) => {
     if (self.queue.length > 0) {
-      logger.info('ack received - flag first command from queue as done');
-      self.queue[0] = { ...self.queue[0], ack: true };
+      // acknowledge the right commands...
+      const idx = self.queue.findIndex((element) => {
+        return getResponseHeader(element.command) === command;
+      });
+
+      if (idx >= 0) {
+        logger.debug(`ack received - set ${idx + 1}. '${command}' command from queue as done`);
+        self.queue[idx] = { ...self.queue[idx], ack: true };
+      } else {
+        logger.warn(`ack received for command '${command}', but no relevant element found in queue`);
+      }
     } else {
       logger.warn('there is no command to acknowledge');
     }
@@ -554,10 +572,17 @@ function checkRunData(states) {
  * Prepares Cockpit-Address for further use
  */
 function prepareCockpitAddress(data) {
-  let address = data[1].toString(16);
-  if (address.length === 1) {
-    address = '0' + address;
+  let address = '';
+
+  if (data.length > 1) {
+    address = data[1].toString(16);
+    if (address.length === 1) {
+      address = '0' + address;
+    }
+  } else {
+    logger.warn('preparation of cockpit address failed');
   }
+
   return address;
 }
 
