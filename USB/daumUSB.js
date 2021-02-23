@@ -211,6 +211,11 @@ function daumUSB () {
     } else {
       // Check first two bytes to assign response data to previously sent command
       switch(getResponseHeader(numbers)) {
+        case config.daumCommands.get_Adress + daumCockpitAdress:
+          self.acknowledgeCommand();
+          logger.debug('get cockpit address response detected');
+          break;
+
         case config.daumCommands.check_Cockpit + daumCockpitAdress:
           self.acknowledgeCommand();
           logger.debug('check cockpit response detected');
