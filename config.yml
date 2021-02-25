@@ -98,6 +98,7 @@ gpio:
     shiftDownPin: 17
 
 daumCockpit:
+    productId: '6001'
     adress: '00'
     gotAdressSuccess: false
 

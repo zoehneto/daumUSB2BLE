@@ -43,7 +43,7 @@ function daumUSB () {
         ports.forEach(function (p) {
           // ??? don't know if this is the ID of ergobike, or the serial adapter,
           // this has to be configured for every bike, so I might skip it
-          if (p.vendorId && p.productId) {
+          if (p.vendorId && p.productId && p.productId === config.daumCockpit.productId) {
             self.openPort(p.path, p.vendorId, p.productId);
           }
         })
