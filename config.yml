@@ -142,6 +142,7 @@ daumRanges:
       max_rpm: 199
       min_gear: 1
       max_gear: 28
+      min_shift: 1
       max_shift: 5
       manual_program: 0
       min_program: 0

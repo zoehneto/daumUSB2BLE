@@ -285,7 +285,7 @@ function daumUSB () {
             let power = 0;
             // power - 25 watt will always be transmitted by daum;
             // set to 0 if rpm is 0 to avoid rolling if stand still in applications like zwift or fullgaz
-            if (rpm === 0) {
+            if (global.globalmode !== 'ERG' && rpm === 0) {
               data.power = power;
             } else {
               power = (states[5]);
@@ -512,9 +512,10 @@ function daumUSB () {
       // cut too high power calculations
       power = config.daumRanges.max_power * config.daumRanges.power_factor;
     }
+
     // round up and to step of 5 to match daum spec and devide by 5
     const ergopower = Math.round(power / config.daumRanges.power_factor);
-    // TODO: Resolve error
+
     self.setDaumCommand(config.daumCommands.set_Watt, daumCockpitAdress, ergopower, priorityLevel.HIGH);
   };
 

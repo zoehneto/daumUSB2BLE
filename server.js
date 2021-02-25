@@ -98,8 +98,8 @@ io.on('connection', socket => {
   socket.on('shiftGear', function (data) {
     // via webserver - set gears - !!!this is in conflict with gpio gear changing, because no read of gears when using gpios
     // NOTE: by changing the gear here, the cockpit switches to gear mode (jog wheel switches only gears from that time)
-    logger.info('shift Gear');
     let gear = global.globalgear_daum;
+    logger.info(`shift gear (current gear: ${gear}`);
 
     switch (data) {
       case 'minus_minus':
@@ -117,32 +117,36 @@ io.on('connection', socket => {
       default:
         logger.warn('set Gear can not be processed (setting last known gear)');
     }
+
     daumUSB.setGear(gear);
     io.emit('raw', '[server.js] - set Gear: ' + gear);
   });
 
   socket.on('shiftPower', function (data) {
-    logger.info('shift Power');
-    let power = global.globalpower_daum;
+    let power = Math.round(global.globalpower_daum / config.daumRanges.power_factor);
+    logger.info(`shift power (current power: ${power * config.daumRanges.power_factor} Watt)`);
 
     switch (data) {
       case 'minus_minus':
-        power = power - config.daumRanges.max_shift * config.daumRanges.power_factor;
+        power = power - config.daumRanges.max_shift;
         break;
       case 'minus':
-        power = power - config.daumRanges.power_factor;
+        power = power - config.daumRanges.min_shift;
         break;
       case 'plus_plus':
-        power = power + config.daumRanges.max_shift * config.daumRanges.power_factor;
+        power = power + config.daumRanges.max_shift;
         break;
       case 'plus':
-        power = power + config.daumRanges.power_factor;
+        power = power + config.daumRanges.min_shift;
         break;
       default:
         logger.warn('set Power can not be processed (setting last known power)');
     }
+
+    power = power * config.daumRanges.power_factor;
+    logger.info(`set power to: ${power} Watt`);
     daumUSB.setPower(power);
-    io.emit('raw', '[server.js] - set Power: ' + power);
+    io.emit('raw', `[server.js] - set Power to ${power} Watt`);
   });
 
   socket.on('setGear', function (data) {
