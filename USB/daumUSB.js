@@ -395,7 +395,10 @@ function daumUSB () {
         self.queue[0] = {...self.queue[0], retries: element.retries};
 
         if (element.retries > config.queue.max_retries) {
-          logger.warn('this will be the last retry');
+          if (self.getResponseHeader(self.queue[0].command) === (config.daumCommands.get_Adress + daumCockpitAdress)) {
+            logger.warn('cannot retrieve cockpit address. there is a problem with the connection to the cockpit')
+          }
+          logger.warn('there will be the last retry');
           self.acknowledgeCommand(self.getResponseHeader(self.queue[0].command));
         }
       } else {
