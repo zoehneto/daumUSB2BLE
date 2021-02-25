@@ -514,6 +514,7 @@ function daumUSB () {
     }
     // round up and to step of 5 to match daum spec and devide by 5
     const ergopower = Math.round(power / config.daumRanges.power_factor);
+    // TODO: Resolve error
     self.setDaumCommand(config.daumCommands.set_Watt, daumCockpitAdress, ergopower, priorityLevel.HIGH);
   };
 
@@ -577,7 +578,7 @@ function checkRunData(states) {
  * Prepares Cockpit-Address for further use
  */
 function prepareCockpitAddress(data) {
-  let address = '';
+  let address = daumCockpitAdress;
 
   if (data.length > 1) {
     address = data[1].toString(16);
@@ -585,7 +586,7 @@ function prepareCockpitAddress(data) {
       address = '0' + address;
     }
   } else {
-    logger.warn('preparation of cockpit address failed');
+    logger.warn(`preparation of cockpit address failed. using ${daumCockpitAdress} for it.`);
   }
 
   return address;
