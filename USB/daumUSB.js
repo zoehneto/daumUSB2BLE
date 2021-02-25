@@ -194,7 +194,7 @@ function daumUSB () {
       if (checkAdressResponse(numbers)) {
         self.acknowledgeCommand(config.daumCommands.get_Adress);
         // get the address from the stream by using the index
-        daumCockpitAdress = prepareCockpitAddress(states);
+        daumCockpitAdress = self.prepareCockpitAddress(states);
         logger.info('getAdress - [Adress]: ' + daumCockpitAdress);
         self.emitter.emit('key', '[daumUSB.js] - getAdress - [Adress]: ' + daumCockpitAdress);
 
@@ -211,7 +211,7 @@ function daumUSB () {
       }
     } else {
       // Check first two bytes to assign response data to previously sent command
-      switch(getResponseHeader(numbers)) {
+      switch(self.getResponseHeader(numbers)) {
         case config.daumCommands.get_Adress + daumCockpitAdress:
           self.acknowledgeCommand(config.daumCommands.get_Adress + daumCockpitAdress);
           logger.debug('get cockpit address response detected');
@@ -355,7 +355,7 @@ function daumUSB () {
     self.getRunDataInterval = setInterval(() => {
       // push run data command if it is not already in the queue
       const runDataCommands = self.queue.filter((element) => {
-        return getResponseHeader(element.command) === config.daumCommands.run_Data + daumCockpitAdress;
+        return self.getResponseHeader(element.command) === config.daumCommands.run_Data + daumCockpitAdress;
       });
 
       if (runDataCommands.length === 0) {
@@ -396,7 +396,7 @@ function daumUSB () {
 
         if (element.retries > config.queue.max_retries) {
           logger.warn('this will be the last retry');
-          self.acknowledgeCommand(getResponseHeader(self.queue[0].command));
+          self.acknowledgeCommand(self.getResponseHeader(self.queue[0].command));
         }
       } else {
         self.lastCommandId = element.id;
@@ -426,7 +426,7 @@ function daumUSB () {
     if (self.queue.length > 0) {
       // acknowledge the right commands...
       const idx = self.queue.findIndex((element) => {
-        return getResponseHeader(element.command) === command;
+        return self.getResponseHeader(element.command) === command;
       });
 
       if (idx >= 0) {
@@ -538,6 +538,32 @@ function daumUSB () {
   this.setGear = function (gear) {
     self.setDaumCommand(config.daumCommands.set_Gear, daumCockpitAdress, gear, priorityLevel.HIGH);
   };
+
+
+  /**
+   * Prepares Cockpit-Address for further use
+   */
+  this.prepareCockpitAddress = (data) => {
+    let address = daumCockpitAdress;
+
+    if (data.length > 1) {
+      address = data[1].toString(16);
+      if (address.length === 1) {
+        address = '0' + address;
+      }
+    } else {
+      logger.warn(`preparation of cockpit address failed. using ${daumCockpitAdress} for it.`);
+    }
+
+    return address;
+  };
+
+  /**
+   * Gets header of response data (1. Byte: Command; 2. Byte: Cockpit-Address)
+   */
+  this.getResponseHeader = (data) => {
+    return data[0].toString(16) + self.prepareCockpitAddress(data);
+  };
 }
 
 /* HELPER FUNCTIONS */
@@ -572,31 +598,6 @@ function checkRunData(states) {
   }
   logger.warn('the given run data is not completely valid, but we are trying to filter it anyway');
   return true;
-}
-
-/**
- * Prepares Cockpit-Address for further use
- */
-function prepareCockpitAddress(data) {
-  let address = daumCockpitAdress;
-
-  if (data.length > 1) {
-    address = data[1].toString(16);
-    if (address.length === 1) {
-      address = '0' + address;
-    }
-  } else {
-    logger.warn(`preparation of cockpit address failed. using ${daumCockpitAdress} for it.`);
-  }
-
-  return address;
-}
-
-/**
- * Gets header of response data (1. Byte: Command; 2. Byte: Cockpit-Address)
- */
-function getResponseHeader(data) {
-  return data[0].toString(16) + prepareCockpitAddress(data);
 }
 
 function parseHexToInt(hex) {
