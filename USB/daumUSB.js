@@ -304,7 +304,7 @@ function daumUSB () {
             // calculating the speed based on the RPM to gain some accuracy; speed signal is only integer
             // as long as the gearRatio is the same as in the spec of DAUM,
             // the actual speed on the display and the calculated one will be the same
-            // DAUM: the ratio starts from 42:24 and ends at 53:12; see TRS_8008 Manual page 16
+            // DAUM: the ratio starts from 42:24 and ends at 53:12; see TRS_8008 Manual page 54
             // const gearRatio = config.gears.ratioLow + (data.gear - 1) * config.gears.ratioHigh
             const gearRatio = config.gearbox['g' + data.gear];                      // 1,75 + ( gl_Gang -1 )* 0.098767
             const distance = gearRatio * config.gears.circumference;                // distance in cm per rotation
