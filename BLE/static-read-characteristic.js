@@ -1,4 +1,4 @@
-const Bleno = require('bleno');
+const Bleno = require('@abandonware/bleno');
 
 class StaticReadCharacteristic extends Bleno.Characteristic {
   constructor (uuid, description, value) {

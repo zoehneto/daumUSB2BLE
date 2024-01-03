@@ -1,4 +1,4 @@
-const Bleno = require('bleno');
+const Bleno = require('@abandonware/bleno');
 const FitnessControlPoint = require('./fitness-control-point-characteristic');
 const IndoorBikeDataCharacteristic = require('./indoor-bike-data-characteristic');
 const StaticReadCharacteristic = require('./static-read-characteristic');

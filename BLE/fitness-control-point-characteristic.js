@@ -1,4 +1,4 @@
-const Bleno = require('bleno');
+const Bleno = require('@abandonware/bleno');
 const config = require('config-yml');
 const DEBUG = config.DEBUG.BLE;
 const Logger = require('../logger');
