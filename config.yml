@@ -7,7 +7,7 @@ DEBUG:
 
 mock:
     daumUSB: false
-    BLE: true
+    BLE: false
 
 globals:
     speed_daum: 0
@@ -98,7 +98,7 @@ gpio:
     shiftDownPin: 17
 
 daumCockpit:
-    productId: '6001'
+    serialPath: '/dev/ttyUSB0'
     adress: '00'
     gotAdressSuccess: false
 
