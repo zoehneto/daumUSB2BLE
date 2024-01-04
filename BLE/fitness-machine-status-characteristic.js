@@ -1,6 +1,5 @@
 const Bleno = require('@abandonware/bleno');
-const config = require('config-yml');
-const Logger = require('./logger');
+const Logger = require('../logger');
 
 const logger = new Logger('fitness-machine-status-characteristic.js');
 
@@ -45,7 +44,7 @@ class FitnessMachineStatusCharacteristic extends Bleno.Characteristic {
 
   onSubscribe (maxValueSize, updateValueCallback) {
     logger.debug('client subscribed');
-    this._updateValueCallback = updateValueCallbackM;
+    this._updateValueCallback = updateValueCallback;
     return this.RESULT_SUCCESS;
   }
 
