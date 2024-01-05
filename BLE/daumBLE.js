@@ -44,8 +44,8 @@ class DaumBLE extends EventEmitter {
       }
     });
 
-    bleno.on('advertisingStartError', () => {
-      console.log(`[daumBLE.js] - ${this.name} - advertisingStartError - advertising stopped`);
+    bleno.on('advertisingStartError', error => {
+      console.log(`[daumBLE.js] - ${this.name} - advertisingStartError - advertising stopped: ${error}`);
       self.emit('advertisingStartError');
       self.emit('error', `[daumBLE.js] - ${this.name} - advertisingStartError - advertising stopped`);
     });
@@ -60,11 +60,21 @@ class DaumBLE extends EventEmitter {
       console.log(`[daumBLE.js] - ${this.name} - servicesSet: ${(error) ? 'error ' + error : 'success'}`);
     });
 
+    bleno.on('servicesSetError', error => {
+      console.log(`[daumBLE.js] - ${this.name} - servicesSetError: ${error}`);
+    });
+
     bleno.on('accept', (clientAddress) => {
       console.log(`[daumBLE.js] - ${this.name} - accept - Client: ${clientAddress}`);
       self.emit('accept', clientAddress);
       self.emit('key', `[daumBLE.js] - ${this.name} - accept - Client: ${clientAddress}`);
       bleno.updateRssi();
+    });
+
+    bleno.on('disconnect', (clientAddress) => {
+      console.log(`[daumBLE.js] - ${this.name} - disconnect - Client: ${clientAddress}`);
+      self.emit('disconnect', clientAddress);
+      self.emit('key', `[daumBLE.js] - ${this.name} - disconnect - Client: ${clientAddress}`);
     });
 
     bleno.on('rssiUpdate', (rssi) => {
