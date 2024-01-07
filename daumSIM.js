@@ -2,7 +2,7 @@
 // the basis for this was found here:
 // https://www.gribble.org/cycling/power_v_speed.html
 
-const config = require('config-yml');
+const config = require('@stefcud/configyml')();
 const Logger = require('./logger');
 
 const logger = new Logger('daumSIM.js');

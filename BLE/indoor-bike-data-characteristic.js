@@ -1,5 +1,4 @@
 const Bleno = require('@abandonware/bleno');
-const config = require('config-yml');
 const Logger = require('../logger');
 
 const logger = new Logger('indoor-bike-data-characteristic.js');

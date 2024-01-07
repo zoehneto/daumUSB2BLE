@@ -1,4 +1,4 @@
-const config = require('config-yml');
+const config = require('@stefcud/configyml')();
 
 const logLevels = {
   DEBUG: 3,

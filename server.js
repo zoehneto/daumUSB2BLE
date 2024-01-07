@@ -6,7 +6,7 @@ const io = require('socket.io')(server);                                  // for
 const path = require('path');
 const { version } = require('./package.json');                            // get version number from package.json
 const Logger = require('./logger');
-const config = require('config-yml');
+const config = require('@stefcud/configyml')();
 
 const DaumUSB = require('./USB/daumUSB');
 const DaumSIM = require('./daumSIM');
