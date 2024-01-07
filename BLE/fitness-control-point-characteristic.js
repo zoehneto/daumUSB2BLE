@@ -44,7 +44,7 @@ class FitnessControlPoint extends Bleno.Characteristic {
     super({
       uuid: '2AD9',
       value: null,
-      properties: ['write'],
+      properties: ['write', 'indicate'],
       descriptors: [
         new Bleno.Descriptor({
           // Client Characteristic Configuration
@@ -59,6 +59,23 @@ class FitnessControlPoint extends Bleno.Characteristic {
       throw 'callback cant be null'
     }
     this.serverCallback = callback
+    this._updateValueCallback = null;
+  }
+  
+  onSubscribe (maxValueSize, updateValueCallback) {
+    logger.debug('client subscribed');
+    this._updateValueCallback = updateValueCallback;
+    return this.RESULT_SUCCESS;
+  }
+
+  onUnsubscribe () {
+    logger.debug('client unsubscribed');
+    this._updateValueCallback = null;
+    return this.RESULT_UNLIKELY_ERROR;
+  }
+
+  onIndicate(){
+    logger.debug("Indication confirmed")
   }
 
   // Follow Control Point instruction from the client
@@ -72,14 +89,14 @@ class FitnessControlPoint extends Bleno.Characteristic {
           if (this.serverCallback('control')) {
             logger.debug('control succeed.');
             this.underControl = true;
-            callback(this.buildResponse(state, ResultCode.success)); // ok
+            this.respond(callback, state, ResultCode.success); // ok
           } else {
             logger.debug('control aborted.');
-            callback(this.buildResponse(state, ResultCode.operationFailed))
+            this.respond(callback, state, ResultCode.operationFailed);
           }
         } else {
           logger.debug('already controlled.');
-          callback(this.buildResponse(state, ResultCode.controlNotPermitted))
+          this.respond(callback, state, ResultCode.controlNotPermitted);
         }
         break;
 
@@ -90,14 +107,14 @@ class FitnessControlPoint extends Bleno.Characteristic {
           // reset the bike
           if (this.serverCallback('reset')) {
             this.underControl = false;
-            callback(this.buildResponse(state, ResultCode.success)) // ok
+            this.respond(callback, state, ResultCode.success); // ok
           } else {
             logger.debug('control reset controlled.');
-            callback(this.buildResponse(state, ResultCode.operationFailed))
+            this.respond(callback, state, ResultCode.operationFailed);
           }
         } else {
           logger.debug('reset without control.');
-          callback(this.buildResponse(state, ResultCode.controlNotPermitted))
+          this.respond(callback, state, ResultCode.controlNotPermitted);
         }
         break;
 
@@ -111,25 +128,25 @@ class FitnessControlPoint extends Bleno.Characteristic {
           logger.debug('Target Power set to: ' + watt);
 
           if (this.serverCallback('power', watt)) {
-            callback(this.buildResponse(state, ResultCode.success)) // ok
+            this.respond(callback, state, ResultCode.success); // ok
             // } else {
             // logger.debug('setTarget failed');
-            // callback(this.buildResponse(state, ResultCode.operationFailed));
+            // this.respond(callback, state, ResultCode.operationFailed);
           }
         } else {
           logger.debug('setTargetPower without control.');
-          callback(this.buildResponse(state, ResultCode.controlNotPermitted));
+          this.respond(callback, state, ResultCode.controlNotPermitted);
         }
         break;
 
       case ControlPointOpCode.startOrResume:
         logger.debug('ControlPointOpCode.startOrResume');
-        callback(this.buildResponse(state, ResultCode.success));
+        this.respond(callback, state, ResultCode.success);
         break;
 
       case ControlPointOpCode.stopOrPause:
         logger.debug('ControlPointOpCode.stopOrPause');
-        callback(this.buildResponse(state, ResultCode.success));
+        this.respond(callback, state, ResultCode.success);
         break;
 
       case ControlPointOpCode.setIndoorBikeSimulationParameters:  // this is SIM MODE
@@ -148,27 +165,32 @@ class FitnessControlPoint extends Bleno.Characteristic {
         logger.debug('setIndoorBikeSimulationParameters - cw: ', cw);
 
         if (this.serverCallback('simulation', windspeed, grade, crr, cw)) {
-          callback(this.buildResponse(state, ResultCode.success))
+          this.respond(callback, state, ResultCode.success);
         } else {
           logger.debug('simulation failed');
-          callback(this.buildResponse(state, ResultCode.operationFailed))
+          this.respond(callback, state, ResultCode.operationFailed);
         }
         break;
 
       default: // anything else : not yet implemented
         logger.debug('State is not supported ' + state + '.');
-        callback(this.buildResponse(state, ResultCode.opCodeNotSupported));
+        this.respond(callback, state, ResultCode.opCodeNotSupported);
         break;
     }
   };
 
-  // Return the result message
-  buildResponse (opCode, resultCode) {
+  // Respond to the message (this is a two stage process, see appendix 2 of the FTMS 1.0 spec)
+  respond (callback, opCode, resultCode) {
+    // Respond to the write request with a success code (bleno then responds appropriately)
+    callback(0x00);
+
+    // Use the indication to inform the client of the result of the write
     const buffer = new Buffer.alloc(3);
     buffer.writeUInt8(0x80, 0);
     buffer.writeUInt8(opCode, 1);
     buffer.writeUInt8(resultCode, 2);
-    return buffer;
+
+    this._updateValueCallback(buffer)
   }
 }
 
