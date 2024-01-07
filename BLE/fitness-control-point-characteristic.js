@@ -88,7 +88,7 @@ class FitnessControlPoint extends Bleno.Characteristic {
 
         if (this.underControl) {
           // reset the bike
-          if (this.serverCallback('[fitness-control-point-characteristic.js] - reset')) {
+          if (this.serverCallback('reset')) {
             this.underControl = false;
             callback(this.buildResponse(state, ResultCode.success)) // ok
           } else {
