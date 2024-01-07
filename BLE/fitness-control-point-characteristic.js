@@ -1,6 +1,4 @@
 const Bleno = require('@abandonware/bleno');
-const config = require('config-yml');
-const DEBUG = config.DEBUG.BLE;
 const Logger = require('../logger');
 
 const logger = new Logger('fitness-control-point-characteristic.js');
@@ -11,7 +9,7 @@ const ControlPointOpCode = {
   requestControl: 0x00,
   resetControl: 0x01,
   setTargetSpeed: 0x02,
-  setTargetInclincation: 0x03,
+  setTargetInclination: 0x03,
   setTargetResistanceLevel: 0x04,
   setTargetPower: 0x05,
   setTargetHeartRate: 0x06,
