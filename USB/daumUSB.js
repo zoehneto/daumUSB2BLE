@@ -1,9 +1,8 @@
 const EventEmitter = require('events').EventEmitter;
-const SerialPort = require('serialport/lib');
+const { SerialPort, InterByteTimeoutParser } = require('serialport');
 const DaumSIM = require('../daumSIM');
 const Logger = require('../logger');
 const config = require('@stefcud/configyml')();
-const InterByteTimeout = require('@serialport/parser-inter-byte-timeout');
 
 // instantiation
 const daumSIM = new DaumSIM();
@@ -65,23 +64,25 @@ function daumUSB () {
     self.emitter.emit('key', '[daumUSB.js] - Ergobike found on port ' + path);
 
     if (config.mock.daumUSB) {
-      const MockBinding = require('@serialport/binding-mock');
-      SerialPort.Binding = MockBinding;
+      const { MockBinding } = require('@serialport/binding-mock');
+      const { SerialPortStream } = require('@serialport/stream')
 
       // Create a port and enable the echo and recording.
       MockBinding.createPort(path, {echo: true, record: true});
+      self.port = new SerialPortStream({ binding: MockBinding, path, baudRate: config.port.baudrate, autoOpen: false })
+    } else {
+      self.port = new SerialPort({
+        path,
+        autoOpen: false,
+        baudRate: config.port.baudrate,
+        dataBits: config.port.dataBits,
+        parity: config.port.parity,
+        stopBits: config.port.stopBits,
+        rtscts: config.port.flowControl,
+      });
     }
 
-    self.port = new SerialPort(path, {
-      autoOpen: false,
-      baudRate: config.port.baudrate,
-      dataBits: config.port.dataBits,
-      parity: config.port.parity,
-      stopBits: config.port.stopBits,
-      rtscts: config.port.flowControl,
-    });
-
-    self.parser = self.port.pipe(new InterByteTimeout({interval: config.port.interval}));
+    self.parser = self.port.pipe(new InterByteTimeoutParser({interval: config.port.interval}));
 
     // try open
     self.internalOpen();
@@ -115,7 +116,7 @@ function daumUSB () {
       if (!err) {
         return;
       }
-      console.logger.debug('port is not open, retry in 10s');
+      logger.debug('port is not open, retry in 10s');
       setTimeout(() => this.internalOpen(), config.intervals.openPort);
     });
   };

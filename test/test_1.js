@@ -1,7 +1,6 @@
-const com = require('serialport');
-const port = new com.SerialPort("/dev/ttyUSB0", { baudrate: 9600 }, false); //if bytelength 1, the received buffer changes accordingly to the send bytes of ergobike
-const Readline = com.parsers.readline;
-const parser = new Readline('\n\r');
+const { SerialPort, ReadlineParser } = require('serialport');
+const port = new SerialPort( { path: "/dev/ttyUSB0", baudRate: 9600 });
+const parser = port.pipe(new ReadlineParser({delimiter: '\n\r'}));
 
 // run data 0x40 & 0x00 == 4000
 var datas = Buffer.from("4000", "hex");
@@ -21,7 +20,6 @@ port.open(function (error) {
       console.log('WRITE DATA: ', datas);
     });
 
-    port.pipe(parser);
     parser.on('data', (data) => {
       s = data.toString('hex');
       ss = s.match(/.{1,2}/g);
@@ -31,7 +29,7 @@ port.open(function (error) {
 
 
     //***1*** listen for events on port
-    // setTimeout(function(){port.on('data', function (data) {
+    // setTimeout(function(){parser.on('data', function (data) {
     //   s = data.toString('hex');
     //   ss = s.match(/.{1,2}/g);
     //   numbers = ss.map(function (x) {return parseInt(x, 16);});
@@ -39,7 +37,7 @@ port.open(function (error) {
     //   // console.log('RECEIVED DATA: ', ConvertBase.hex2dec('data'));
 
   }});
-  // var run_Data = port.on.data;
+  // var run_Data = parser.on.data;
   // var power = (run_Data[4] * 5);
   // var speed = (run_Data[6]);
   // var cadence = (run_Data[5]);
