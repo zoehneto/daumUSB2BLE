@@ -1,4 +1,4 @@
-FROM node:14-bullseye
+FROM node:16-bullseye
 
 # Install system dependencies
 RUN apt update && apt install -y --no-install-recommends \
