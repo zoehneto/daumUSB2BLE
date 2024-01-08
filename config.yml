@@ -36,9 +36,9 @@ port:
 intervals:
     openPort: 10000
     getAdress: 1000
-    runData: 3000
+    runData: 1000
     restart: 1000
-    flushNext: 2000
+    flushNext: 1000
 
 timeouts:
     open: 2000
