@@ -78,7 +78,7 @@ io.on('connection', socket => {
     logger.info('restart');
     geargpio = 1;
     daumUSB.setGear(geargpio);
-    setTimeout(daumUSB.restart, 1000);
+    setTimeout(() => daumUSB.restart(), 1000);
     io.emit('key', '[server.js] - restart');
   });
 
