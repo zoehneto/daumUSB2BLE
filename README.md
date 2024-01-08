@@ -115,7 +115,7 @@ This site is used to toggle between ERG and SIM mode and toggle between switchin
 * ERG mode is fully implemented (FTMS control point), can be switched in workouts via ZWIFT app.
 * SIM mode is fully implemented (FTMS control point) and physics simulation based on parameters send from ZWIFT and parameters input by the user - see section "launch"
 * use virtual gearbox and use Daum buttons and jog wheel to switch gears
-* use gpios (see gpio.js) to add hardware switches for more realistic ride and shifting experience, if not, use the jog wheel or +/- buttons on Daum ergobike 8008 TRS
+* use gpios to add hardware switches for more realistic ride and shifting experience, if not, use the jog wheel or +/- buttons on Daum ergobike 8008 TRS
 
 ### tested apps
 * FULL GAZ - SIM mode working; no rpm
