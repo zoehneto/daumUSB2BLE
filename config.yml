@@ -13,7 +13,6 @@ globals:
     rpm_daum: 0
     gear_daum: 1
     power_daum: 0
-    simpower_daum: 0
     windspeed_ble: 0
     grade_ble: 0
     crr_ble: 0.0040
@@ -45,12 +44,11 @@ timeouts:
     start: 2000
 
 simulation:
-    maxGrade: 16
-    mRider: 65
-    mBike: 9
-    g: 9.8067
-    p: 1.225
-    e: 0.97
+    maxGrade: 16   # Max grade, if the training app specifies a higher grade, we limit the calculation to this value
+    mRider: 83     # Mass of the rider
+    mBike: 9       # Mass of the bike
+    p: 1.225       # Air density in kg/m^3 (1.225 at 15°C at sea level)
+    e: 0.97        # Drive train efficiency
 
 gears:
     circumference: 210

@@ -28,7 +28,6 @@ global.globalspeed_daum = config.globals.speed_daum;
 global.globalrpm_daum = config.globals.rpm_daum;
 global.globalgear_daum = config.globals.gear_daum;
 global.globalpower_daum = config.globals.power_daum;
-global.globalsimpower_daum = config.globals.simpower_daum;
 global.globalwindspeed_ble = config.globals.windspeed_ble;
 global.globalgrade_ble = config.globals.grade_ble;
 global.globalcrr_ble = config.globals.crr_ble;    // set once to have simulation available without BLE connected to apps
@@ -338,8 +337,8 @@ function serverCallback (message, ...args) {
       io.emit('crr', crr);
       io.emit('cw', cw);
 
-      daumSIM.physics(global.globalwindspeed_ble, global.globalgrade_ble, global.globalcrr_ble, global.globalcw_ble, global.globalrpm_daum, global.globalspeed_daum, global.globalgear_daum);
-      const power = Number(global.globalsimpower_daum).toFixed(0);
+      const simpower = daumSIM.physics(global.globalwindspeed_ble, global.globalgrade_ble, global.globalcrr_ble, global.globalcw_ble, global.globalspeed_daum);
+      const power = simpower.toFixed(0);
 
       // daumUSB.setPower(power) // if this is used here, then some random power is transmitted to zwift, e.g.: 111 watts / 20sec
 

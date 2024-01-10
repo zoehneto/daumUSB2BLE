@@ -13,12 +13,9 @@ const logger = new Logger('daumSIM.js');
 // and daumSIM calculates the correct power for the received speed from RS232
 // ///////////////////////////////////////////////////////////////
 
-const maxGrade = 8;       // maximum gradient in %
-
-function daumSIM () {
-  this.physics = function (windspeedz, gradez, crrz, cwz, rpmd, speedd, geard) {
+class daumSIM {
+  physics(windspeedz, gradez, crrz, cwz, speedd) {
     logger.debug('physics calculation started');
-    // io.emit('raw', 'Bike SIM Mode - physics calculation started')
 
     //  Rider variables
     const mRider = config.simulation.mRider;        // mass in kg of the rider
@@ -27,23 +24,20 @@ function daumSIM () {
 
     // height in m of rider - this is already included in the cw value sent from ZWIFT or FULLGAZ
     // const h = 1.92
-    // cross sectional area of the rider, bike and wheels - this is allready included in the cw value sent from ZWIFT or FULLGAZ
+    // cross-sectional area of the rider, bike and wheels - this is already included in the cw value sent from ZWIFT or FULLGAZ
     // const area = 0.0276 * Math.pow(h, 0.725) * Math.pow(mRider, 0.425) + 0.1647;
 
     // ZWIFT simulation variables
-    const grade = gradez;  // gradiant in %
+    let grade = gradez;  // gradiant in %
 
-    // check if gradient received is to high for realistic riding experience
-    if (gradez > maxGrade) {
+    // check if gradient received is too high for realistic riding experience
+    if (gradez > config.simulation.maxGrade) {
       // set to maximum gradient; means, no changes in resistance if gradient is greater than maximum
-      const grade = maxGrade;
+      grade = config.simulation.maxGrade;
     }
 
-    // const angle = Math.atan(grade*0.01); // gradient in ° // through testing and reevaluation of algorythm, it is not neccesarry to have this in force calculation
-    // const radiant = angle * 0.005555556 * Math.PI; // gradient in radiant (rad)
-
     // coefficient of rolling resistance
-    // the values sent from ZWIFT / FULLGAZ are crazy, specially FULLGAZ, when starting to decent, this drives up the wattage to above 600W
+    // the values sent from ZWIFT / FULLGAZ are crazy, specially FULLGAZ, when starting to descend, this drives up the wattage to above 600W
     const crr = crrz;
     // multiply with 1 to parse sting to float
     // the values sent from ZWIFT / FULLGAZ are crazy
@@ -52,13 +46,13 @@ function daumSIM () {
     const cd = cwz;
 
     // DAUM values
-    const v = global.globalspeed_daum * 0.2778;     // speed in m/s
+    const v = speedd * 0.2778;     // speed in m/s
 
     //  Constants
-    const g = 9.8067;                               // acceleration in m/s^2 due to gravity
-    const p = 1.225;                                // air density in kg/m^3 at 15°C at sea level
-    const e = 0.97;                                 // drive chain efficiency
-    // const vw = Math.abs(v + w); // have to do this to avoid NaN in Math.pow()
+    const g = 9.8067;        // acceleration in m/s^2 due to gravity
+    const p = config.simulation.p;    // air density in kg/m^3
+    const e = config.simulation.e;    // drive train efficiency
+    // const vw = Math.abs(v + w);    // have to do this to avoid NaN in Math.pow()
 
     // Cycling Wattage Calculator - https://www.omnicalculator.com/sports/cycling-wattage
     const forceofgravity = g * Math.sin(Math.atan(grade / 100)) * mass;
@@ -73,7 +67,7 @@ function daumSIM () {
     const simpower = (forceofgravity + forcerollingresistance + forceaerodynamic) * v / e;
     logger.debug('SIM calculated power: ', simpower);
 
-    global.globalsimpower_daum = simpower;
+    return simpower;
   }
 }
 

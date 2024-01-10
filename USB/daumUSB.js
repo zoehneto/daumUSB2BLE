@@ -326,8 +326,8 @@ class daumUSB {
               // run power simulation here in parallel to server.js to enhance resolution of resistance,
               // e.g.: ble only triggers sim once per second, but if you pedal faster, this needs to be here.
               if (global.globalmode === 'SIM') {
-                daumSIM.physics(global.globalwindspeed_ble, global.globalgrade_ble, global.globalcrr_ble, global.globalcw_ble, global.globalrpm_daum, global.globalspeed_daum, global.globalgear_daum);
-                this.setPower(Number(global.globalsimpower_daum).toFixed(0));
+                const simpower = daumSIM.physics(global.globalwindspeed_ble, global.globalgrade_ble, global.globalcrr_ble, global.globalcw_ble, global.globalspeed_daum);
+                this.setPower(simpower.toFixed(0));
               }
             }
 
