@@ -311,7 +311,7 @@ function serverCallback (message, ...args) {
       if (args.length > 0) {
         const watt = args[0];
         daumUSB.setPower(watt);
-        logger.debug('Bike in ERG Mode - set Power to: ', watt);
+        logger.debug('Bike in ERG Mode - set Power to: ' + watt);
         io.emit('raw', '[server.js] - Bike in ERG Mode - set Power to: ' + watt);
         io.emit('control', 'ERG MODE');
         success = true;

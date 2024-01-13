@@ -40,7 +40,7 @@ const ResultCode = {
 };
 
 class FitnessControlPoint extends Bleno.Characteristic {
-  constructor (callback) {
+  constructor(callback) {
     super({
       uuid: '2AD9',
       value: null,
@@ -61,25 +61,25 @@ class FitnessControlPoint extends Bleno.Characteristic {
     this.serverCallback = callback
     this._updateValueCallback = null;
   }
-  
-  onSubscribe (maxValueSize, updateValueCallback) {
+
+  onSubscribe(maxValueSize, updateValueCallback) {
     logger.debug('client subscribed');
     this._updateValueCallback = updateValueCallback;
     return this.RESULT_SUCCESS;
   }
 
-  onUnsubscribe () {
+  onUnsubscribe() {
     logger.debug('client unsubscribed');
     this._updateValueCallback = null;
     return this.RESULT_UNLIKELY_ERROR;
   }
 
-  onIndicate(){
+  onIndicate() {
     logger.debug("Indication confirmed")
   }
 
   // Follow Control Point instruction from the client
-  onWriteRequest (data, offset, withoutResponse, callback) {
+  onWriteRequest(data, offset, withoutResponse, callback) {
     const state = data.readUInt8(0);
     switch (state) {
       case ControlPointOpCode.requestControl:
@@ -159,10 +159,10 @@ class FitnessControlPoint extends Bleno.Characteristic {
         const crr = data.readUInt8(5) * 0.0001;
         const cw = data.readUInt8(6) * 0.01;
 
-        logger.debug('setIndoorBikeSimulationParameters - windspeed: ', windspeed);
-        logger.debug('setIndoorBikeSimulationParameters - grade: ', grade);
-        logger.debug('setIndoorBikeSimulationParameters - crr: ', crr);
-        logger.debug('setIndoorBikeSimulationParameters - cw: ', cw);
+        logger.debug('setIndoorBikeSimulationParameters - windspeed: ' + windspeed);
+        logger.debug('setIndoorBikeSimulationParameters - grade: ' + grade);
+        logger.debug('setIndoorBikeSimulationParameters - crr: ' + crr);
+        logger.debug('setIndoorBikeSimulationParameters - cw: ' + cw);
 
         if (this.serverCallback('simulation', windspeed, grade, crr, cw)) {
           this.respond(callback, state, ResultCode.success);
@@ -180,7 +180,7 @@ class FitnessControlPoint extends Bleno.Characteristic {
   };
 
   // Respond to the message (this is a two stage process, see appendix 2 of the FTMS 1.0 spec)
-  respond (callback, opCode, resultCode) {
+  respond(callback, opCode, resultCode) {
     // Respond to the write request with a success code (bleno then responds appropriately)
     callback(0x00);
 

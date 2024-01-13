@@ -56,16 +56,16 @@ class daumSIM {
 
     // Cycling Wattage Calculator - https://www.omnicalculator.com/sports/cycling-wattage
     const forceofgravity = g * Math.sin(Math.atan(grade / 100)) * mass;
-    logger.debug('forceofgravity: ', forceofgravity);
+    logger.debug('forceofgravity: ' + forceofgravity);
 
     const forcerollingresistance = g * Math.cos(Math.atan(grade / 100)) * mass * crr;
-    logger.debug('forcerollingresistance: ', forcerollingresistance);
+    logger.debug('forcerollingresistance: ' + forcerollingresistance);
 
     const forceaerodynamic = 0.5 * cd * p * Math.pow(v + w, 2);
-    logger.debug('forceaerodynamic: ', forceaerodynamic);
+    logger.debug('forceaerodynamic: ' + forceaerodynamic);
 
     const simpower = (forceofgravity + forcerollingresistance + forceaerodynamic) * v / e;
-    logger.debug('SIM calculated power: ', simpower);
+    logger.debug('SIM calculated power: ' + simpower);
 
     return simpower;
   }
