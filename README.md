@@ -1,31 +1,30 @@
 # ergoFACE
-* forked from https://github.com/weinzmi/daumUSB2BLE
-* adjusted to work with Daum ergobike 8008TRS PRO
-
-## the original project "ergoFACE concept"
-* can be found here https://github.com/weinzmi/ergoFACE
+* forked from https://github.com/uhulahen/daumUSB2BLE
+* updated and fixed to work with the current version of Zwift on modern linux
 
 ## prerequisites
 * RS232 to USB converter
 * RS232 custom gender changer or "programing cable" like specified from DAUM
-* raspberry pi 3 Mod. A+ with BLE (Bluetooth low energy) onboard
+  * If your bike didn't come with one, or you've lost it, you can build your own as specified [here](https://bikeboard.at/forum/topic/1564-schnittstellenkabel-rs-232-an-pc/#comment-2424750)
+* Bluetooth 4 LE capable bluetooth adapter
+* Raspberry Pi 3 or newer if you want to control the gears via GPIO
 * nodejs
   * see https://nodejs.org/en/
-  * version 9.11.2 works for me (NOTE: this version is pretty old and should be updated)
+  * version 20 works for me (NOTE: older version down to node 14 may also work)
 
 
-## setup - Install on a rasperypi
-* download the sources / dependencies listed in package.json
-* have a look at bleno setup https://github.com/noble/bleno
+## setup
 
-```shell
-npm install
-```
+### install
+* install the dependencies using `npm ci`
+* follow the steps of the bleno setup https://github.com/abandonware/bleno#linux
+* ensure your user has permissions to access the USB serial adapter (in Arch Linux this requires the `uucp` group)
 
-it can take a while as bleno must be compiled from sources.
-
-## launch
-* if SIM mode is a feature you want to use, edit the parameters in config.yml to fit yours
+### configure sim
+* if SIM mode is a feature you want to use, edit the parameters in config.yml to fit you
+* the default values for gear rations match those specified by Daum for the 8008 TRS
+  * if you have a different model, you may want to change them
+  * if the configured gear ratios don't match the Daum ones, everything will still behave correctly but the speed displayed on the bike will be incorrect
 ```
 simulation:
     maxGrade: 16 // maximum grade, higher than this, will be cut
@@ -49,7 +48,7 @@ gearbox: // this are the gear ratios used for each gear
     g14: 4.55
 ```
 
-## GPIOs for shifting gears
+### configure GPIOs for shifting gears
 * if you want to use 2 external buttons for shifting gears, edit the parameters in config.yml to fit yours
 ```
 gpio:
@@ -62,11 +61,14 @@ gpio:
     shiftDownPin: 17 // GPIO pin for shift down
 ```
 
+### run server
 * go to installation directory and start node server from command line
 ```shell
 sudo node server.js
 ```
-### you can install the server as a service, to just plug the raspberry to a power source and ride on
+
+### optional systemd setup
+You can install the server as a service, to just plug the raspberry to a power source and ride on
 
 * copy ergoFACE.service from lib\systemd\system to your local system (this is an example for Raspbian Stretch)
 ```shell
@@ -92,8 +94,8 @@ sudo systemctl status ergoFACE.service
 * start an app like ZWIFT and your Daum bike will appear as "DAUM Ergobike 8008 TRS" device with two services (power & FTMS)
 
 ## website / server
-* start your browser and enter "pi-adress:3000" (try to get fixed IP address for you raspberry on your router before)
-you can follow the ergoFACE activity on a this website.
+* start your browser and enter "pi-address:3000" (try to get fixed IP address for you raspberry on your router before)
+you can follow the ergoFACE activity on this website.
 It will display the current power, rpm, speed
 the current gear and program your Daum is running and the socket messages.
 This site is used to toggle between ERG and SIM mode and toggle between switching gears or just power
