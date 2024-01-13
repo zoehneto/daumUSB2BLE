@@ -1,8 +1,7 @@
-FROM node:20-bullseye
+FROM node:20-bookworm
 
 # Install system dependencies
 RUN apt update && apt install -y --no-install-recommends \
-    python2 \
     bluetooth \
     bluez \
     libbluetooth-dev \
