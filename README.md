@@ -11,7 +11,6 @@
 * nodejs
   * see https://nodejs.org/en/
   * version 20 works for me (NOTE: older version down to node 14 may also work)
-* a linux kernel pre 6.9 (see [details](https://github.com/abandonware/node-bluetooth-hci-socket/issues/60))
 
 
 ## setup
