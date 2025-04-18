@@ -2,7 +2,8 @@ const EventEmitter = require('events').EventEmitter;
 const {SerialPort, InterByteTimeoutParser} = require('serialport');
 const DaumSIM = require('../daumSIM');
 const Logger = require('../logger');
-const config = require('@stefcud/configyml')();
+const fs = require('fs');
+const config = require('yaml').parse(fs.readFileSync('config.yml', 'utf8'));
 
 // instantiation
 const daumSIM = new DaumSIM();

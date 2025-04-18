@@ -1,4 +1,5 @@
-const config = require('@stefcud/configyml')();
+const fs = require('fs');
+const config = require('yaml').parse(fs.readFileSync('config.yml', 'utf8'));
 
 const logLevels = {
   DEBUG: 3,
