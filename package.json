@@ -11,11 +11,11 @@
   "license": "MIT",
   "dependencies": {
     "@abandonware/bleno": "github:abandonware/bleno#4d72805a8cd9433485051d2692cdf7d36ffb7069",
-    "ejs": "^3.1.9",
-    "express": "^4.18.2",
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
     "onoff": "^6.0.3",
     "serialport": "^12.0.0",
-    "socket.io": "^4.7.3",
+    "socket.io": "^4.8.1",
     "yaml": "^2.7.1"
   }
 }
