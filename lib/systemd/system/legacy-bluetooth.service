@@ -1,0 +1,13 @@
+[Unit]
+Description=Activate bluetooth adapter
+ConditionPathIsDirectory=/sys/class/bluetooth
+After=systemd-rfkill.service bluetooth.target
+Requires=systemd-rfkill.service
+BindsTo=bluetooth.target
+
+[Service]
+ExecStart=/usr/bin/hciconfig hci0 up
+Type=simple
+
+[Install]
+WantedBy=multi-user.target

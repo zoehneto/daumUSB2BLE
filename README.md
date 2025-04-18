@@ -70,14 +70,16 @@ sudo node server.js
 ### optional systemd setup
 You can install the server as a service, to just plug the raspberry to a power source and ride on
 
-* copy ergoFACE.service from lib\systemd\system to your local system (this is an example for Raspbian Stretch)
+* copy ergoFACE.service (for the application) and legacy-bluetooth.service (to activate the bluetooth adapter) from lib/systemd/system to your local system (this is an example for Raspbian Bookworm)
 ```shell
 sudo chmod 644 /lib/systemd/system/ergoFACE.service
+sudo chmod 644 /lib/systemd/system/legacy-bluetooth.service
 ```
 * configure
 ```shell
 sudo systemctl daemon-reload
 sudo systemctl enable ergoFACE.service
+sudo systemctl enable legacy-bluetooth.service
 ```
 * reboot
 ```shell

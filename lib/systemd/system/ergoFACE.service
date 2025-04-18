@@ -1,20 +1,16 @@
 [Unit]
 Description=ergoFACE service
-Requires=bluetooth.service network-online.target
-After=bluetooth.service network-online.target
+Requires=bluetooth.target network-online.target
+After=bluetooth.target network-online.target legacy-bluetooth.service
 
 
 [Service]
 ExecStart=/usr/bin/node /home/pi/daumUSB2BLE/server.js
-# Required on some systems
-#WorkingDirectory=/home/pi/daumUSB2BLE
+WorkingDirectory=/home/pi/daumUSB2BLE
 Restart=always
 # Restart service after 10 seconds if node service crashes
 RestartSec=10
-# Output to syslog
-StandardOutput=syslog
-StandardError=syslog
-SyslogIdentifier=nodejs-example
+SyslogIdentifier=ergoface
 #User=<alternate user>
 #Group=<alternate group>
 Environment=NODE_ENV=production PORT=3000
