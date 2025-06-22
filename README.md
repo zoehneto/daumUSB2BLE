@@ -6,11 +6,11 @@
 * RS232 to USB converter
 * RS232 custom gender changer or "programing cable" like specified from DAUM
   * If your bike didn't come with one, or you've lost it, you can build your own as specified [here](https://bikeboard.at/forum/topic/1564-schnittstellenkabel-rs-232-an-pc/#comment-2424750)
-* Bluetooth 4 LE capable bluetooth adapter
+* Bluetooth 4 LE capable bluetooth adapter (if you have a Raspberry Pi 3 or later, no adapter is needed)
 * Raspberry Pi 3 or newer if you want to control the gears via GPIO
 * nodejs
   * see https://nodejs.org/en/
-  * version 20 works for me (NOTE: older version down to node 14 may also work)
+  * version 20 works for me (NOTE: older version down to node 16 may also work)
 
 
 ## setup
