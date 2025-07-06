@@ -13,6 +13,7 @@
     "@abandonware/bleno": "github:abandonware/bleno#4d72805a8cd9433485051d2692cdf7d36ffb7069",
     "ejs": "^3.1.10",
     "express": "^5.1.0",
+    "incyclist-ant-plus": "^0.3.5",
     "onoff": "^6.0.3",
     "serialport": "^12.0.0",
     "socket.io": "^4.8.1",

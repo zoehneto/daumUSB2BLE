@@ -1,12 +1,10 @@
 DEBUG:
-    daumUSB: true
-    server: true
-    daumSIM: true
     level: 3  # DEBUG
 
 mock:
     daumUSB: false
     BLE: false
+    Ant: false
 
 globals:
     speed_daum: 0

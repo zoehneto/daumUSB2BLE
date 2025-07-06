@@ -1,6 +1,7 @@
 # ergoFACE
 * forked from https://github.com/uhulahen/daumUSB2BLE
 * updated and fixed to work with the current version of Zwift on modern linux
+* extended with broadcasting of ride metrics via ANT+
 
 ## prerequisites
 * RS232 to USB converter
@@ -8,6 +9,7 @@
   * If your bike didn't come with one, or you've lost it, you can build your own as specified [here](https://bikeboard.at/forum/topic/1564-schnittstellenkabel-rs-232-an-pc/#comment-2424750)
 * Bluetooth 4 LE capable bluetooth adapter (if you have a Raspberry Pi 3 or later, no adapter is needed)
 * Raspberry Pi 3 or newer if you want to control the gears via GPIO
+* Garmin ANT+ adapter, if you want to send workout metrics via ANT+ (e.g. to a smartwatch)
 * nodejs
   * see https://nodejs.org/en/
   * version 20 works for me (NOTE: older version down to node 16 may also work)
@@ -19,6 +21,10 @@
 * install the dependencies using `npm ci`
 * follow the steps of the bleno setup https://github.com/abandonware/bleno#linux
 * ensure your user has permissions to access the USB serial adapter (in Arch Linux this requires the `uucp` group)
+* if you want to broadcast ride metrics via ANT+, you have to add a udev rule similar to the following to allow access to the ANT+ stick (adapt the device and vendor id for your stick):
+```
+SUBSYSTEM=="usb", ATTR{idVendor}=="0fcf", ATTR{idProduct}=="1009", MODE="0660", GROUP="uucp"
+```
 
 ### configure sim
 * if SIM mode is a feature you want to use, edit the parameters in config.yml to fit you

@@ -12,6 +12,7 @@ const config = require('yaml').parse(fs.readFileSync('config.yml', 'utf8'));
 const DaumUSB = require('./USB/daumUSB');
 const DaumSIM = require('./daumSIM');
 const DaumBLE = config.mock.BLE ? require('./mock/daumBLE') : require('./BLE/daumBLE');
+const DaumAnt = config.mock.Ant? require('./mock/daumAnt') : require('./ant/daumAnt');
 
 const logger = new Logger('server.js');
 
@@ -56,6 +57,7 @@ server.listen(process.env.PORT || config.server.port, function () {
 const daumUSB = new DaumUSB();
 const daumSIM = new DaumSIM();
 const daumBLE = new DaumBLE(serverCallback);
+const daumAnt = new DaumAnt();
 const daumObs = daumUSB.open();
 
 process.on('SIGINT', () => {
@@ -281,6 +283,7 @@ daumObs.on('data', data => {
   if ('program' in data) io.emit('program', data.program);
 
   daumBLE.notifyFTMS(data);
+  daumAnt.notify(data);
 });
 
 // /////////////////////////////////////////////////////////////////////////
