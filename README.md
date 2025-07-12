@@ -21,6 +21,10 @@
 * install the dependencies using `npm ci`
 * follow the steps of the bleno setup https://github.com/abandonware/bleno#linux
 * ensure your user has permissions to access the USB serial adapter (in Arch Linux this requires the `uucp` group)
+* ensure the USB serial adapter is available at the configured path with a udev rule like this (adapt the device and vendor id for your serial adapter):
+```
+SUBSYSTEM=="tty", ATTRS{idVendor}=="067b", ATTRS{idProduct}=="23a3", SYMLINK+="ttyDaumUsbSerial", MODE="0660", GROUP="uucp"
+```
 * if you want to broadcast ride metrics via ANT+, you have to add a udev rule similar to the following to allow access to the ANT+ stick (adapt the device and vendor id for your stick):
 ```
 SUBSYSTEM=="usb", ATTR{idVendor}=="0fcf", ATTR{idProduct}=="1009", MODE="0660", GROUP="uucp"

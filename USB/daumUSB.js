@@ -38,20 +38,9 @@ class daumUSB {
    */
   open() {
     if (config.mock.daumUSB) {
-      this.openPort('/dev/ROBOT', 'MOCK_VENDOR', 'MOCK_PRODUCT');
+      this.openPort('/dev/ROBOT');
     } else {
-      SerialPort.list().then((ports) => {
-        ports.forEach((p) => {
-          // Some adapters don't specify vendor / product id, so we let users specify the
-          // appropriate adapter by device path
-          if (p.path === config.daumCockpit.serialPath) {
-            this.openPort(p.path, p.vendorId, p.productId);
-          }
-        })
-      }, (err) => {
-        this.emitter.emit('error', '[daumUSB.js] - open: ' + err);
-        throw err;
-      });
+      this.openPort(config.daumCockpit.serialPath);
     }
 
     return this.emitter;
@@ -60,8 +49,7 @@ class daumUSB {
   /**
    * Handles port to Daum ergobike
    */
-  openPort(path, vendorId, productId) {
-    logger.debug('openPort - ' + vendorId + '  ' + productId); // RS232 converter Ids
+  openPort(path) {
     logger.info('openPort - Ergobike found on port ' + path);
     this.emitter.emit('key', '[daumUSB.js] - Ergobike found on port ' + path);
 

@@ -93,7 +93,7 @@ gpio:
     shiftDownPin: 17
 
 daumCockpit:
-    serialPath: '/dev/ttyUSB0'
+    serialPath: '/dev/ttyDaumUsbSerial'
     adress: '00'
     gotAdressSuccess: false
 
